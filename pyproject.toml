@@ -1,0 +1,22 @@
+[project]
+name = "markdiff"
+version = "0.0.1"
+authors = [
+  { name="kkAyataka", email="kk.ayataka@gmail.com" },
+]
+description = "Mark Markdown diff lines"
+readme = "docs/README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICENSE"]
+
+[project.urls]
+Homepage = "https://github.com/kkAyataka/markdiff"
+Issues = "https://github.com/kkAyataka/markdiff/issues"
+
+[project.optional-dependencies]
+dev = ["build", "twine", "wheel"]
