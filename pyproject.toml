@@ -19,4 +19,7 @@ Homepage = "https://github.com/kkAyataka/markdiff"
 Issues = "https://github.com/kkAyataka/markdiff/issues"
 
 [project.optional-dependencies]
-dev = ["build", "twine", "wheel"]
+dev = [
+  "build", "twine", "wheel",
+  "pytest", "pytest-cov",
+]
