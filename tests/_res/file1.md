@@ -31,8 +31,8 @@ Code block.
 
 ```
 git status
-git add
 git commit
+git log
 ```
 
 Intented code block.
@@ -40,6 +40,7 @@ Intented code block.
     git status
     git add
     git commit
+    git log
 
 ## Relative links
 
@@ -50,24 +51,28 @@ Intented code block.
 - item1
 * item1
     * nasted item1
-    * nasted item2
 + item2
 * itemA
+* itemB
 * itemC
 
 1. numbered item1
 2. numbered item2
+3. numbered item3
 
 
 ## Task lists
 
 - [x] #739
 - [ ] task2
+- [ ] task3
 
 ## Paragraphs
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
 
 Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+
+Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
 
 Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
