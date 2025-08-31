@@ -1,4 +1,4 @@
-from .markdiff import hello
+from .markdiff import main
 
 if __name__ == "__main__":
-    hello()
+    raise SystemExit(main())
