@@ -9,7 +9,7 @@ paragraph
 * list
     code block
 ```
-fanced coded block
+fenced coded block
 ```
 ___
 |h|
@@ -59,7 +59,7 @@ def test_mark_header_after_block():
         # header
 
         ```
-        fanced coded block
+        fenced coded block
         ```
         # header
 
@@ -151,7 +151,7 @@ def test_mark_quote_after_block():
         > quote
 
         ```
-        fanced coded block
+        fenced coded block
         ```
         > quote
 
@@ -237,7 +237,7 @@ def test_mark_paragraph_after_block():
         paragraph
 
         ```
-        fanced coded block
+        fenced coded block
         ```
         paragraph
 
@@ -335,7 +335,7 @@ def test_mark_list_after_block():
         * list
 
         ```
-        fanced coded block
+        fenced coded block
         ```
         * list
 
