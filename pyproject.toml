@@ -22,4 +22,6 @@ Issues = "https://github.com/kkAyataka/markdiff/issues"
 dev = [
   "build", "twine", "wheel",
   "pytest", "pytest-cov",
+  "ruff",
+  "watchdog"
 ]
