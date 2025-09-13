@@ -25,3 +25,9 @@ dev = [
   "ruff",
   "watchdog"
 ]
+
+[tool.ruff]
+extend-select = ["I"]
+
+[tool.ruff.isort]
+combine-as-imports = true
