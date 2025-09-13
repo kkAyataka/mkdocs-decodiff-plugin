@@ -24,6 +24,30 @@ class MdLine:
     line: str
     line_type: int
 
+    def is_empty(self) -> bool:
+        return self.line_type & MdLineType.EMPTY.value
+
+    def is_heading(self) -> bool:
+        return self.line_type & MdLineType.EMPTY.value
+
+    def is_quote(self) -> bool:
+        return self.line_type & MdLineType.QUOTE.value
+
+    def is_list(self) -> bool:
+        return self.line_type & MdLineType.LIST.value
+
+    def is_code_block(self) -> bool:
+        return self.line_type & MdLineType.CODE_BLOCK.value
+
+    def is_h_rule(self) -> bool:
+        return self.line_type & MdLineType.H_RULE.value
+
+    def is_table(self) -> bool:
+        return self.line_type & MdLineType.TABLE.value
+
+    def is_paragraph(self) -> bool:
+        return self.line_type & MdLineType.PARAGRAPH.value
+
     def _line_type_str(self) -> str:
         types = []
         if self.line_type & MdLineType.EMPTY.value:
@@ -46,7 +70,7 @@ class MdLine:
         return ",".join(types)
 
     def __str__(self) -> str:
-        return f"{self.line_type_str()}: {self.line}"
+        return f"{self._line_type_str()}: {self.line}"
 
 
 @dataclass
@@ -204,7 +228,7 @@ def _mark_markdown_line(ctx: MdMarkContext, line: str):
     ctx.lines.append(MdLine(line, line_type))
 
 
-def mark_markdown(file_path: str) -> List[str]:
+def mark_markdown(file_path: str) -> List[MdLine]:
     """Mark markdown"""
     lines: list[MdLine] = []
     with open(file_path, "r", newline="", encoding="utf-8") as f:
