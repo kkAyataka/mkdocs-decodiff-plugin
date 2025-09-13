@@ -1,7 +1,8 @@
+import re
 from dataclasses import dataclass, field
 from enum import Enum
-import re
 from typing import List
+
 
 class MdLineType(Enum):
     """Markdown line type"""
@@ -15,6 +16,7 @@ class MdLineType(Enum):
     TABLE = 64
     PARAGRAPH = 128
 
+
 @dataclass(frozen=True)
 class MdLine:
     """Markdown line"""
@@ -25,26 +27,27 @@ class MdLine:
     def _line_type_str(self) -> str:
         types = []
         if self.line_type & MdLineType.EMPTY.value:
-            types.append('E')
+            types.append("E")
         if self.line_type & MdLineType.HEADING.value:
-            types.append('H')
+            types.append("H")
         if self.line_type & MdLineType.QUOTE.value:
-            types.append('Q')
+            types.append("Q")
         if self.line_type & MdLineType.LIST.value:
-            types.append('L')
+            types.append("L")
         if self.line_type & MdLineType.CODE_BLOCK.value:
-            types.append('C')
+            types.append("C")
         if self.line_type & MdLineType.H_RULE.value:
-            types.append('R')
+            types.append("R")
         if self.line_type & MdLineType.TABLE.value:
-            types.append('T')
+            types.append("T")
         if self.line_type & MdLineType.PARAGRAPH.value:
-            types.append('P')
+            types.append("P")
 
-        return ','.join(types)
+        return ",".join(types)
 
     def __str__(self) -> str:
         return f"{self.line_type_str()}: {self.line}"
+
 
 @dataclass
 class MdMarkContext:
@@ -56,13 +59,14 @@ class MdMarkContext:
     in_code_block = False
     in_table = False
 
+
 def _mark_markdown_line(ctx: MdMarkContext, line: str):
     """Mark a single line"""
 
     line_type = 0
     # blocks
     # header
-    if re.search(r'^#+ ', line):
+    if re.search(r"^#+ ", line):
         line_type |= MdLineType.HEADING.value
 
         ctx.in_quote = False
@@ -70,7 +74,7 @@ def _mark_markdown_line(ctx: MdMarkContext, line: str):
         ctx.in_code_block = False
         ctx.in_table = False
     # blockquotes
-    elif re.search(r'^> ', line):
+    elif re.search(r"^> ", line):
         if not ctx.in_code_block:
             line_type |= MdLineType.QUOTE.value
             ctx.in_quote = True
@@ -79,8 +83,8 @@ def _mark_markdown_line(ctx: MdMarkContext, line: str):
             ctx.in_code_block = False
             ctx.in_table = False
     # bulleted list
-    elif m := re.match(r'^(\s*)[*\-+] (\[[ xX]\] )?', line):
-        if m.group(1) == '':
+    elif m := re.match(r"^(\s*)[*\-+] (\[[ xX]\] )?", line):
+        if m.group(1) == "":
             line_type |= MdLineType.LIST.value
             ctx.in_list = True
 
@@ -95,7 +99,7 @@ def _mark_markdown_line(ctx: MdMarkContext, line: str):
             line_type |= MdLineType.CODE_BLOCK.value
 
         if not ctx.in_code_block:
-            if m.group(1) == '':
+            if m.group(1) == "":
                 line_type |= MdLineType.LIST.value
                 ctx.in_list = True
             elif ctx.in_list:
@@ -105,9 +109,9 @@ def _mark_markdown_line(ctx: MdMarkContext, line: str):
             ctx.in_code_block = False
             ctx.in_table = False
     # numbered list
-    elif m := re.match(r'^(\s*)\d+[.)] ', line):
+    elif m := re.match(r"^(\s*)\d+[.)] ", line):
         if not ctx.in_code_block:
-            if m.group(1) == '':
+            if m.group(1) == "":
                 line_type |= MdLineType.LIST.value
                 ctx.in_list = True
             elif ctx.in_list:
@@ -117,7 +121,7 @@ def _mark_markdown_line(ctx: MdMarkContext, line: str):
             ctx.in_code_block = False
             ctx.in_table = False
     # code block
-    elif re.search(r'^\s*```', line):
+    elif re.search(r"^\s*```", line):
         line_type |= MdLineType.CODE_BLOCK.value
         ctx.in_code_block = not ctx.in_code_block
 
@@ -126,8 +130,10 @@ def _mark_markdown_line(ctx: MdMarkContext, line: str):
             ctx.in_list = False
             ctx.in_table = False
     # code block
-    elif re.search(r'^    .*', line):
-        is_empty_prev_line = ctx.lines and ctx.lines[-1].line_type & MdLineType.EMPTY.value
+    elif re.search(r"^    .*", line):
+        is_empty_prev_line = (
+            ctx.lines and ctx.lines[-1].line_type & MdLineType.EMPTY.value
+        )
         if is_empty_prev_line:
             line_type |= MdLineType.CODE_BLOCK.value
             ctx.in_code_block + True
@@ -142,7 +148,7 @@ def _mark_markdown_line(ctx: MdMarkContext, line: str):
         else:
             line_type |= MdLineType.CODE_BLOCK.value
     # horizontal rule
-    elif re.search(r'^([\*\-_]\s*){3,}$', line):
+    elif re.search(r"^([\*\-_]\s*){3,}$", line):
         if not ctx.in_code_block:
             line_type |= MdLineType.H_RULE.value
 
@@ -151,25 +157,29 @@ def _mark_markdown_line(ctx: MdMarkContext, line: str):
             ctx.in_code_block = False
             ctx.in_table = False
     # table
-    elif re.search(r'^(\|[ \t\-:|]*|[-:][-:| ]*)$', line):
+    elif re.search(r"^(\|[ \t\-:|]*|[-:][-:| ]*)$", line):
         if not ctx.in_code_block:
             line_type |= MdLineType.TABLE.value
             ctx.in_table = True
 
             if ctx.lines:
                 prev_line = ctx.lines[-1]
-                if re.search(r'^(\|)?.*\|.*', prev_line.line):
-                    ctx.lines[-1] = MdLine(prev_line.line, prev_line.line_type | MdLineType.TABLE.value)
+                if re.search(r"^(\|)?.*\|.*", prev_line.line):
+                    ctx.lines[-1] = MdLine(
+                        prev_line.line, prev_line.line_type | MdLineType.TABLE.value
+                    )
     # table row
-    elif re.search(r'^(\|)?.*\|.*', line):
+    elif re.search(r"^(\|)?.*\|.*", line):
         if not ctx.in_code_block and ctx.in_table:
             line_type |= MdLineType.TABLE.value
     # empty
-    elif re.search(r'^\s*$', line):
+    elif re.search(r"^\s*$", line):
         line_type |= MdLineType.EMPTY.value
     # paragraph
-    elif re.search(r'^[^\s]', line):
-        is_empty_prev_line = ctx.lines and ctx.lines[-1].line_type & MdLineType.EMPTY.value
+    elif re.search(r"^[^\s]", line):
+        is_empty_prev_line = (
+            ctx.lines and ctx.lines[-1].line_type & MdLineType.EMPTY.value
+        )
         if ctx.in_code_block and not is_empty_prev_line:
             line_type |= MdLineType.CODE_BLOCK.value
         elif ctx.in_list and not is_empty_prev_line:
@@ -183,7 +193,7 @@ def _mark_markdown_line(ctx: MdMarkContext, line: str):
                 ctx.in_code_block = False
                 ctx.in_table = False
             line_type |= MdLineType.PARAGRAPH.value
-    elif re.search(r'^\s+[^\s]', line):
+    elif re.search(r"^\s+[^\s]", line):
         if ctx.in_code_block:
             line_type |= MdLineType.CODE_BLOCK.value
         elif ctx.in_list:
@@ -193,10 +203,11 @@ def _mark_markdown_line(ctx: MdMarkContext, line: str):
 
     ctx.lines.append(MdLine(line, line_type))
 
+
 def mark_markdown(file_path: str) -> List[str]:
     """Mark markdown"""
     lines: list[MdLine] = []
-    with open(file_path, "r", newline='', encoding="utf-8") as f:
+    with open(file_path, "r", newline="", encoding="utf-8") as f:
         ctx = MdMarkContext()
         for _, line in enumerate(f):
             _mark_markdown_line(ctx, line)
