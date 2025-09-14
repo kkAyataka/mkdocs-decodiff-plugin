@@ -1,0 +1,8 @@
+site_name: My Docs
+
+plugins:
+  - markdiff:
+      base: 0c09aac
+      dir: tests/e2e-mkdocs
+      change_list_file: docs/changes.md
+
