@@ -62,6 +62,53 @@ def _read_text(path: str) -> List[str]:
     with open(path, "r", encoding="utf-8") as f:
         return f.readlines()
 
+def _embed_markdiff_tags(marked_lines, change_info) -> str:
+    changed_line_iter = iter(change_info.changed_lines)
+    changed_line = next(changed_line_iter, None)
+    new_lines = []
+    for i, md_line in enumerate(marked_lines, start=1):
+        if changed_line is None:
+            new_lines.append(md_line.line)
+            continue
+
+        if i == changed_line.line_no:
+            if md_line.is_code_block() or md_line.is_h_rule() or md_line.is_table():
+                new_lines.append(md_line.line)
+                changed_line = next(changed_line_iter, None)
+                continue
+
+            offset = 0
+            if changed_line.col_start == 0:
+                if m := re.search(r"^#+ ", md_line.line):
+                    offset = m.end()
+                elif m := re.search(r"^\s*[*\-+] (\[[ xX]\] )?", md_line.line):
+                    offset = m.end()
+                elif m := re.search(r"^\s*\d+[.)] ", md_line.line):
+                    offset = m.end()
+                elif m := re.search(r"^> ", md_line.line):
+                    offset = m.end()
+
+            start = changed_line.col_start + offset
+            end = changed_line.col_end
+            anchor_no = changed_line.anchor_no
+            new_line = (
+                md_line.line[:start]
+                + f'<span id="markdiff-anchor-{anchor_no}" class="markdiff-diff">'
+                + md_line.line[start:end]
+                + "</span>"
+                + md_line.line[end:]
+            )
+            new_lines.append(new_line)
+
+            print(f"--- anchor {changed_line.anchor_no} ---")
+            print(md_line.line)
+            print(new_line)
+            changed_line = next(changed_line_iter, None)
+        else:
+            new_lines.append(md_line.line)
+
+    return '\n'.join(new_lines)
+
 
 def run(
     base: str,

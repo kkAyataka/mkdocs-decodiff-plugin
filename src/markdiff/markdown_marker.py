@@ -227,9 +227,16 @@ def _mark_markdown_line(ctx: MdMarkContext, line: str):
 
     ctx.lines.append(MdLine(line, line_type))
 
+def mark_markdown_lines(lines: List[str]) -> List[MdLine]:
+    ctx = MdMarkContext()
+    for line in lines:
+        _mark_markdown_line(ctx, line)
+
+    return ctx.lines
 
 def mark_markdown(file_path: str) -> List[MdLine]:
     """Mark markdown"""
+
     lines: list[MdLine] = []
     with open(file_path, "r", newline="", encoding="utf-8") as f:
         ctx = MdMarkContext()

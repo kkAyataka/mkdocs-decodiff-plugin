@@ -18,13 +18,24 @@ license-files = ["LICENSE"]
 Homepage = "https://github.com/kkAyataka/markdiff"
 Issues = "https://github.com/kkAyataka/markdiff/issues"
 
+[project.entry-points."mkdocs.plugins"]
+markdiff = "markdiff.mkdocs_plugin.plugin:MarkdiffPlugin"
+
 [project.optional-dependencies]
 dev = [
   "build", "twine", "wheel",
   "pytest", "pytest-cov",
   "ruff",
-  "watchdog"
+  "watchdog",
+  "mkdocs"
 ]
+
+# https://setuptools.pypa.io/en/latest/userguide/datafiles.html#package-data
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+markdiff = ["*/*.css"]
 
 [tool.ruff]
 extend-select = ["I"]
