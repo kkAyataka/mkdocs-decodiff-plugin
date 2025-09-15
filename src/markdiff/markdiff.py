@@ -3,7 +3,8 @@ import os
 import re
 from typing import Dict, List, Optional, Set, Tuple
 
-from ._git_diff import WordDiff, parse_porcelain_diff, run_git_diff
+from ._git_diff.git_diff import WordDiff, run_git_diff
+from ._git_diff.parse_porcelain_diff import parse_porcelain_diff
 from .markdown_marker import mark_markdown
 
 _HEAD_RE = re.compile(r"^(?P<prefix>\s*#{1,6}\s+)(?P<body>.*)$")
@@ -62,6 +63,7 @@ def _read_text(path: str) -> List[str]:
     with open(path, "r", encoding="utf-8") as f:
         return f.readlines()
 
+
 def _embed_markdiff_tags(marked_lines, change_info) -> str:
     changed_line_iter = iter(change_info.changed_lines)
     changed_line = next(changed_line_iter, None)
@@ -72,7 +74,12 @@ def _embed_markdiff_tags(marked_lines, change_info) -> str:
             continue
 
         if i == changed_line.line_no:
-            if md_line.is_code_block() or md_line.is_h_rule() or md_line.is_table():
+            if (
+                md_line.is_empty()
+                or md_line.is_code_block()
+                or md_line.is_h_rule()
+                or md_line.is_table()
+            ):
                 new_lines.append(md_line.line)
                 changed_line = next(changed_line_iter, None)
                 continue
@@ -100,14 +107,11 @@ def _embed_markdiff_tags(marked_lines, change_info) -> str:
             )
             new_lines.append(new_line)
 
-            print(f"--- anchor {changed_line.anchor_no} ---")
-            print(md_line.line)
-            print(new_line)
             changed_line = next(changed_line_iter, None)
         else:
             new_lines.append(md_line.line)
 
-    return '\n'.join(new_lines)
+    return "\n".join(new_lines)
 
 
 def run(

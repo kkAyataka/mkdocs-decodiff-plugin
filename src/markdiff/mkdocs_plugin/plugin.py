@@ -17,12 +17,13 @@ import subprocess
 from typing import List
 
 try:
-    from mkdocs.plugins import BasePlugin
-    from mkdocs.structure.files import File
+    import mkdocs
 except Exception:
     BasePlugin = object
 
-from .._git_diff import ChangeInfo, WordDiff, parse_porcelain_diff, run_git_diff
+from .._git_diff.git_diff import ChangeInfo, WordDiff, run_git_diff
+from .._git_diff.parse_porcelain_diff import parse_porcelain_diff
+from .._git_diff.parse_unified_diff import parse_unified_diff
 from ..markdiff import _embed_markdiff_tags
 from ..markdown_marker import mark_markdown_lines
 
@@ -37,17 +38,30 @@ def _get_git_root_dir():
         return None
 
 
-class MarkdiffPlugin(BasePlugin):
+class MarkdiffPluginConfig(mkdocs.config.base.Config):
+    base = mkdocs.config.config_options.Type(str, default="main")
+    dir = mkdocs.config.config_options.Type(str, default="docs")
+    change_list_file = mkdocs.config.config_options.Type(str, default=None)
+    word_diff = mkdocs.config.config_options.Type(bool, default=False)
+
+
+class MarkdiffPlugin(mkdocs.plugins.BasePlugin[MarkdiffPluginConfig]):
     _git_root_dir: str = None
     _changes: List[ChangeInfo] = []
 
     def on_pre_build(self, config):
         self._git_root_dir = _get_git_root_dir()
 
-        gitdiff = run_git_diff(
-            self.config["base"], WordDiff.PORCELAIN, self.config["dir"]
-        )
-        self._changes = parse_porcelain_diff(gitdiff)
+        if self.config["word_diff"]:
+            gitdiff = run_git_diff(
+                self.config["base"], WordDiff.PORCELAIN, self.config["dir"]
+            )
+            self._changes = parse_porcelain_diff(gitdiff)
+        else:
+            gitdiff = run_git_diff(
+                self.config["base"], WordDiff.NONE, self.config["dir"]
+            )
+            self._changes = parse_unified_diff(gitdiff)
 
     def on_config(self, config):
         config.extra_css.insert(0, "assets/markdiff/markdiff.css")
@@ -57,7 +71,7 @@ class MarkdiffPlugin(BasePlugin):
     def on_files(self, files, config):
         # register assets
         files.append(
-            File(
+            mkdocs.structure.files.File(
                 path="markdiff.css",
                 src_dir=os.path.join(os.path.dirname(__file__), "assets"),
                 dest_dir=f"{config.site_dir}/assets/markdiff",
