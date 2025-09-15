@@ -4,10 +4,12 @@
 cd "$(dirname "${0}")"
 cd ../
 
+readonly ARGS=$@
+
 # run pytest with watchmedo
 # https://pypi.org/project/watchdog/
 watchmedo shell-command \
     --patterns="*.py" \
     --recursive \
-    --command="pytest '${1}'" \
+    --command="pytest ${ARGS}" \
     .
