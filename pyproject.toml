@@ -1,0 +1,44 @@
+[project]
+name = "decodiff"
+version = "0.0.1"
+authors = [
+  { name="kkAyataka", email="kk.ayataka@gmail.com" },
+]
+description = "Decoartes Markdown diff lines"
+readme = "docs/README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICENSE"]
+
+[project.urls]
+Homepage = "https://github.com/kkAyataka/decodiff"
+Issues = "https://github.com/kkAyataka/decodiff/issues"
+
+[project.entry-points."mkdocs.plugins"]
+decodiff = "decodiff.mkdocs_plugin.plugin:DecodiffPlugin"
+
+[project.optional-dependencies]
+dev = [
+  "build", "twine", "wheel",
+  "pytest", "pytest-cov",
+  "ruff",
+  "watchdog",
+  "mkdocs"
+]
+
+# https://setuptools.pypa.io/en/latest/userguide/datafiles.html#package-data
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+decodiff = ["*/*.css"]
+
+[tool.ruff]
+extend-select = ["I"]
+
+[tool.ruff.isort]
+combine-as-imports = true

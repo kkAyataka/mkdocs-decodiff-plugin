@@ -1,0 +1,9 @@
+site_name: My Docs
+
+plugins:
+  - decodiff:
+      base: 8f8bf35
+      dir: docs
+      change_list_file: docs/changes.md
+
+use_directory_urls: false
