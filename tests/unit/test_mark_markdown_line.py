@@ -1,6 +1,6 @@
 from textwrap import dedent
 
-from markdiff.markdown_marker import MdMarkContext, _mark_markdown_line
+from decodiff.markdown_marker import MdMarkContext, _mark_markdown_line
 
 """
 # header

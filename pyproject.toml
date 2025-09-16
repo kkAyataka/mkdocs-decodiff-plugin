@@ -1,10 +1,10 @@
 [project]
-name = "markdiff"
+name = "decodiff"
 version = "0.0.1"
 authors = [
   { name="kkAyataka", email="kk.ayataka@gmail.com" },
 ]
-description = "Mark Markdown diff lines"
+description = "Decoartes Markdown diff lines"
 readme = "docs/README.md"
 requires-python = ">=3.9"
 classifiers = [
@@ -15,11 +15,11 @@ license = "MIT"
 license-files = ["LICENSE"]
 
 [project.urls]
-Homepage = "https://github.com/kkAyataka/markdiff"
-Issues = "https://github.com/kkAyataka/markdiff/issues"
+Homepage = "https://github.com/kkAyataka/decodiff"
+Issues = "https://github.com/kkAyataka/decodiff/issues"
 
 [project.entry-points."mkdocs.plugins"]
-markdiff = "markdiff.mkdocs_plugin.plugin:MarkdiffPlugin"
+decodiff = "decodiff.mkdocs_plugin.plugin:DecodiffPlugin"
 
 [project.optional-dependencies]
 dev = [
@@ -35,7 +35,7 @@ dev = [
 where = ["src"]
 
 [tool.setuptools.package-data]
-markdiff = ["*/*.css"]
+decodiff = ["*/*.css"]
 
 [tool.ruff]
 extend-select = ["I"]

@@ -18,7 +18,7 @@
       "name": "debug",
       "type": "debugpy",
       "request": "launch",
-      "module": "markdiff",
+      "module": "decodiff",
       "args": [
         "--base=0c09aac",
         "--dir=tests/_res"

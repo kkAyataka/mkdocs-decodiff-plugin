@@ -1,4 +1,4 @@
-# markdiff
+# decodiff
 
 ## Overview
 
@@ -11,17 +11,17 @@ When combined with a Markdown-to-HTML conversion program, it can automatically c
 ### Install
 
 ```shell
-pip install markdiff
+pip install decodiff
 ```
 
 ### CLI
 
 ```shell
 # hash
-python3 -m markdiff --base=3f1a9c2
+python3 -m decodiff --base=3f1a9c2
 
 # tag or branch
-python3 -m markdiff --base=v1.0.0 --dir=docs --change-list-file=docs/diff.md
+python3 -m decodiff --base=v1.0.0 --dir=docs --change-list-file=docs/diff.md
 ```
 
 ### MkDocs
@@ -37,7 +37,7 @@ python3 -m markdiff --base=v1.0.0 --dir=docs --change-list-file=docs/diff.md
 
 * Retrieve diff data using `git diff`
 * Add an HTML tag to each diff line. For example:
-    * `<span id="markdiff-hunk-1" class="markdiff-diff">text</span>`
+    * `<span id="decodiff-hunk-1" class="decodiff-diff">text</span>`
     * Preserve leading markup, such as headings (`#`) and bullet points (`*`)
 * Create a diff list file containing a list of links
 

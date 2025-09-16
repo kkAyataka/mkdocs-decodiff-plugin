@@ -25,8 +25,8 @@ def _split_leading_markup(text: str) -> Tuple[str, str]:
 def _annotate_lines(
     content: List[str],
     changed_lines: Set[int],
-    id_prefix: str = "markdiff-hunk-",
-    cls: str = "markdiff-diff",
+    id_prefix: str = "decodiff-hunk-",
+    cls: str = "decodiff-diff",
 ) -> Tuple[List[str], List[Tuple[int, str, str]]]:
     anchors: List[Tuple[int, str, str]] = []
     counter = 1
@@ -64,7 +64,7 @@ def _read_text(path: str) -> List[str]:
         return f.readlines()
 
 
-def _embed_markdiff_tags(marked_lines, change_info) -> str:
+def _embed_decodiff_tags(marked_lines, change_info) -> str:
     changed_line_iter = iter(change_info.changed_lines)
     changed_line = next(changed_line_iter, None)
     new_lines = []
@@ -100,7 +100,7 @@ def _embed_markdiff_tags(marked_lines, change_info) -> str:
             anchor_no = changed_line.anchor_no
             new_line = (
                 md_line.line[:start]
-                + f'<span id="markdiff-anchor-{anchor_no}" class="markdiff-diff">'
+                + f'<span id="decodiff-anchor-{anchor_no}" class="decodiff-diff">'
                 + md_line.line[start:end]
                 + "</span>"
                 + md_line.line[end:]
@@ -161,7 +161,7 @@ def run(
                 anchor_no = changed_line.anchor_no
                 new_line = (
                     md_line.line[:start]
-                    + f'<span id="markdiff-anchor-{anchor_no}" class="markdiff-diff">'
+                    + f'<span id="decodiff-anchor-{anchor_no}" class="decodiff-diff">'
                     + md_line.line[start:end]
                     + "</span>"
                     + md_line.line[end:]
@@ -221,7 +221,7 @@ def run(
 
 def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="markdiff",
+        prog="decodiff",
         description=(
             "Insert HTML tags into Markdown files for changed lines based on git diff."
         ),
@@ -258,5 +258,5 @@ def main(argv: Optional[List[str]] = None) -> int:
     try:
         return run(args.base, args.target_dir, args.change_list_file)
     except Exception as e:
-        print(f"markdiff error: {e}")
+        print(f"decodiff error: {e}")
         return 2

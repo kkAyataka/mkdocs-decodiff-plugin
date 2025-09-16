@@ -1,9 +1,9 @@
 from importlib.metadata import PackageNotFoundError, version
 
-from .markdiff import main
+from .decodiff import main
 
 try:
-    __version__ = version("markdiff")
+    __version__ = version("decodiff")
 except PackageNotFoundError:
     __version__ = "unknown"
 
