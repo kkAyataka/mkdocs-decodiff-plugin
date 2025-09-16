@@ -18,13 +18,20 @@ pip install decodiff
 
 ```shell
 # hash
-python3 -m decodiff --base=3f1a9c2
+python3 -m decodiff --base=8f8bf35
 
 # tag or branch
 python3 -m decodiff --base=v1.0.0 --dir=docs --change-list-file=docs/diff.md
 ```
 
 ### MkDocs
+
+```yml
+plugins:
+  - decodiff:
+      base: 8f8bf35
+      dir: docs
+```
 
 ## Structure
 
