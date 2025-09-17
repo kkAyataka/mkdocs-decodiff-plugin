@@ -1,15 +1,16 @@
 [project]
 name = "decodiff"
-version = "0.0.2"
+version = "0.0.3"
 authors = [
   { name="kkAyataka", email="kk.ayataka@gmail.com" },
 ]
-description = "Decoartes Markdown diff lines"
+description = "Decorate Markdown diff lines for better readability. CLI and MkDocs plugin"
 readme = "docs/README.md"
 requires-python = ">=3.9"
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "Operating System :: OS Independent",
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
 ]
 license = "MIT"
 license-files = ["LICENSE"]
