@@ -21,7 +21,7 @@ pip install decodiff
 python3 -m decodiff --base=8f8bf35
 
 # tag or branch
-python3 -m decodiff --base=v1.0.0 --dir=docs --change-list-file=docs/diff.md
+python3 -m decodiff --base=v1.0.0 --dir=docs
 ```
 
 ### MkDocs
