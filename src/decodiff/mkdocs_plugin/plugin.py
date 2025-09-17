@@ -41,7 +41,7 @@ def _get_git_root_dir():
 class DecodiffPluginConfig(mkdocs.config.base.Config):
     base = mkdocs.config.config_options.Type(str, default="main")
     dir = mkdocs.config.config_options.Type(str, default="docs")
-    change_list_file = mkdocs.config.config_options.Type(str, default=None)
+    change_list_file = mkdocs.config.config_options.Type(str, default="docs/changes.md")
     word_diff = mkdocs.config.config_options.Type(bool, default=False)
 
 

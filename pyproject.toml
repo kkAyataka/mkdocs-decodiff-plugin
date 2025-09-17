@@ -1,6 +1,6 @@
 [project]
 name = "decodiff"
-version = "0.0.1"
+version = "0.0.2"
 authors = [
   { name="kkAyataka", email="kk.ayataka@gmail.com" },
 ]
@@ -35,7 +35,7 @@ dev = [
 where = ["src"]
 
 [tool.setuptools.package-data]
-decodiff = ["*/*.css"]
+decodiff = ["**/*.css"]
 
 [tool.ruff]
 extend-select = ["I"]
