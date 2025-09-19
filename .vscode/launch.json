@@ -13,16 +13,6 @@
         "-s",
         "tests/unit"
       ]
-    },
-    {
-      "name": "debug",
-      "type": "debugpy",
-      "request": "launch",
-      "module": "decodiff",
-      "args": [
-        "--base=0c09aac",
-        "--dir=tests/_res"
-      ]
-    },
+    }
   ]
 }
