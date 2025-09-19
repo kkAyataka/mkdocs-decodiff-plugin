@@ -1,4 +1,4 @@
-# decodiff
+# mkdocs-decodiff-plugin
 
 ## Overview
 
@@ -6,25 +6,15 @@ This program inserts HTML tags into Markdown files to decorate diff lines using 
 
 When combined with a Markdown-to-HTML conversion program, it can automatically change the background color of diff lines to emphasize them.
 
-## How to use
+## How to Use
 
 ### Install
 
 ```shell
-pip install decodiff
+pip install mkdocs-decodiff-plugin
 ```
 
-### CLI
-
-```shell
-# hash
-python3 -m decodiff --base=8f8bf35
-
-# tag or branch
-python3 -m decodiff --base=v1.0.0 --dir=docs
-```
-
-### MkDocs
+### mkdocs.yml
 
 ```yml
 plugins:

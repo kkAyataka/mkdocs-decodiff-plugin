@@ -221,7 +221,7 @@ def run(
 
 def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="decodiff",
+        prog="mkdocs_decodiff_plugin",
         description=(
             "Insert HTML tags into Markdown files for changed lines based on git diff."
         ),

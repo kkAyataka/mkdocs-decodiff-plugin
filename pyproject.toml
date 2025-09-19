@@ -1,10 +1,10 @@
 [project]
-name = "decodiff"
-version = "0.0.3"
+name = "mkdocs-decodiff-plugin"
+version = "0.0.1"
 authors = [
   { name="kkAyataka", email="kk.ayataka@gmail.com" },
 ]
-description = "Decorate Markdown diff lines for better readability. CLI and MkDocs plugin"
+description = "MkDocs plugin to decorate git diff lines"
 readme = "docs/README.md"
 requires-python = ">=3.9"
 classifiers = [
@@ -16,11 +16,11 @@ license = "MIT"
 license-files = ["LICENSE"]
 
 [project.urls]
-Homepage = "https://github.com/kkAyataka/decodiff"
-Issues = "https://github.com/kkAyataka/decodiff/issues"
+Homepage = "https://github.com/kkAyataka/mkdocs-decodiff-plugin"
+Issues = "https://github.com/kkAyataka/mkdocs-decodiff-plugin"
 
 [project.entry-points."mkdocs.plugins"]
-decodiff = "decodiff.mkdocs_plugin.plugin:DecodiffPlugin"
+decodiff = "mkdocs_decodiff_plugin.mkdocs_plugin.plugin:DecodiffPlugin"
 
 [project.optional-dependencies]
 dev = [
@@ -36,7 +36,7 @@ dev = [
 where = ["src"]
 
 [tool.setuptools.package-data]
-decodiff = ["**/*.css"]
+mkdocs_decodiff_plugin = ["**/*.css"]
 
 [tool.ruff]
 extend-select = ["I"]

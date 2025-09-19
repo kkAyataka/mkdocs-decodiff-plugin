@@ -1,6 +1,6 @@
 from textwrap import dedent
 
-from decodiff._git_diff.parse_unified_diff import parse_unified_diff
+from mkdocs_decodiff_plugin._git_diff.parse_unified_diff import parse_unified_diff
 
 
 def test_parse_unified_diff_1():
