@@ -26,7 +26,7 @@ def _annotate_lines(
     content: List[str],
     changed_lines: Set[int],
     id_prefix: str = "decodiff-hunk-",
-    cls: str = "decodiff-diff",
+    cls: str = "decodiff",
 ) -> Tuple[List[str], List[Tuple[int, str, str]]]:
     anchors: List[Tuple[int, str, str]] = []
     counter = 1
@@ -100,7 +100,7 @@ def _embed_decodiff_tags(marked_lines, change_info) -> str:
             anchor_no = changed_line.anchor_no
             new_line = (
                 md_line.line[:start]
-                + f'<span id="decodiff-anchor-{anchor_no}" class="decodiff-diff">'
+                + f'<span id="decodiff-anchor-{anchor_no}" class="decodiff">'
                 + md_line.line[start:end]
                 + "</span>"
                 + md_line.line[end:]
@@ -161,7 +161,7 @@ def run(
                 anchor_no = changed_line.anchor_no
                 new_line = (
                     md_line.line[:start]
-                    + f'<span id="decodiff-anchor-{anchor_no}" class="decodiff-diff">'
+                    + f'<span id="decodiff-anchor-{anchor_no}" class="decodiff">'
                     + md_line.line[start:end]
                     + "</span>"
                     + md_line.line[end:]
