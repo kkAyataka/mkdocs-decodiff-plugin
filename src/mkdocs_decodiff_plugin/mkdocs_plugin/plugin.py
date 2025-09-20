@@ -25,7 +25,7 @@ except Exception:
 from .._git_diff.git_diff import ChangeInfo, WordDiff, run_git_diff
 from .._git_diff.parse_porcelain_diff import parse_porcelain_diff
 from .._git_diff.parse_unified_diff import parse_unified_diff
-from ..decodiff import _embed_decodiff_tags
+from ..decodiff import embed_decodiff_tags
 from ..markdown_marker import mark_markdown_lines
 
 
@@ -106,6 +106,6 @@ class DecodiffPlugin(mkdocs.plugins.BasePlugin[DecodiffPluginConfig]):
 
                 # embed markdif tag and make new markdown
                 marked_lines = mark_markdown_lines(markdown.splitlines())
-                md = _embed_decodiff_tags(marked_lines, change, offset)
+                md = embed_decodiff_tags(marked_lines, change, offset)
 
         return md

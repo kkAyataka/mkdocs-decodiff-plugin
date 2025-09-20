@@ -1,57 +1,11 @@
 import argparse
 import os
 import re
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from ._git_diff.git_diff import WordDiff, run_git_diff
 from ._git_diff.parse_porcelain_diff import parse_porcelain_diff
 from .markdown_marker import mark_markdown
-
-_HEAD_RE = re.compile(r"^(?P<prefix>\s*#{1,6}\s+)(?P<body>.*)$")
-_TASK_RE = re.compile(r"^(?P<prefix>\s*[-*+]\s+\[[ xX]\]\s+)(?P<body>.*)$")
-_UL_RE = re.compile(r"^(?P<prefix>\s*[-*+]\s+)(?P<body>.*)$")
-_OL_RE = re.compile(r"^(?P<prefix>\s*\d+\.\s+)(?P<body>.*)$")
-_BQ_RE = re.compile(r"^(?P<prefix>\s*>\s+)(?P<body>.*)$")
-
-
-def _split_leading_markup(text: str) -> Tuple[str, str]:
-    for rx in (_HEAD_RE, _TASK_RE, _UL_RE, _OL_RE, _BQ_RE):
-        m = rx.match(text)
-        if m:
-            return m.group("prefix"), m.group("body")
-    return "", text
-
-
-def _annotate_lines(
-    content: List[str],
-    changed_lines: Set[int],
-    id_prefix: str = "decodiff-hunk-",
-    cls: str = "decodiff",
-) -> Tuple[List[str], List[Tuple[int, str, str]]]:
-    anchors: List[Tuple[int, str, str]] = []
-    counter = 1
-    out: List[str] = []
-    for idx, line in enumerate(content, start=1):
-        if idx not in changed_lines:
-            out.append(line)
-            continue
-        # Keep line ending
-        if line.endswith("\n"):
-            raw = line[:-1]
-            end = "\n"
-        else:
-            raw = line
-            end = ""
-
-        prefix, body = _split_leading_markup(raw)
-
-        anchor_id = f"{id_prefix}{counter}"
-        counter += 1
-
-        wrapped = f'{prefix}<span id="{anchor_id}" class="{cls}">{body}</span>'
-        out.append(wrapped + end)
-        anchors.append((idx, anchor_id, body))
-    return out, anchors
 
 
 def _write_text(path: str, lines: List[str]) -> None:
@@ -64,7 +18,7 @@ def _read_text(path: str) -> List[str]:
         return f.readlines()
 
 
-def _embed_decodiff_tags(marked_lines, change_info, start_offset = 0) -> str:
+def embed_decodiff_tags(marked_lines, change_info, start_offset = 0) -> str:
     changed_line_iter = iter(change_info.changed_lines)
     changed_line = next(changed_line_iter, None)
     new_lines = []
@@ -189,21 +143,6 @@ def run(
     return 0
     # file -> list of (anchor_id, label)
     grouped_links: Dict[str, List[Tuple[str, str]]] = {}
-
-    for file_path, changed_lines in changed_map.items():
-        # Resolve on-disk path from repo root; git paths are relative
-        fs_path = os.path.join(os.getcwd(), file_path)
-        if not os.path.exists(fs_path):
-            # skip missing files (renames/deletes etc.)
-            continue
-        try:
-            md_lines = _read_text(fs_path)
-        except UnicodeDecodeError:
-            continue
-        new_lines, anchors = _annotate_lines(md_lines, changed_lines)
-        _write_text(fs_path, new_lines)
-        for _line_no, anchor_id, label in anchors:
-            grouped_links.setdefault(file_path, []).append((anchor_id, label))
 
     if change_list_file and grouped_links:
         # Produce a Markdown change list grouped by file with metadata
