@@ -11,8 +11,8 @@ if [ -z "${VIRTUAL_ENV}" ]; then
 fi
 
 # load env file
-if [ -e ./scripts/env ]; then
-  source ./scripts/env
+if [ -e ./scripts/.env ]; then
+  source ./scripts/.env
 fi
 
 # checks env
