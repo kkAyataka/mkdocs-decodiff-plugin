@@ -34,7 +34,7 @@ plugins:
 
 * Retrieve diff data using `git diff`
 * Add an HTML tag to each diff line. For example:
-    * `<span id="decodiff-hunk-1" class="decodiff-diff">text</span>`
+    * `<span id="decodiff-hunk-1" class="decodiff">text</span>`
     * Preserve leading markup, such as headings (`#`) and bullet points (`*`)
 * Create a diff list file containing a list of links
 

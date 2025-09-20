@@ -26,7 +26,7 @@ def _annotate_lines(
     content: List[str],
     changed_lines: Set[int],
     id_prefix: str = "decodiff-hunk-",
-    cls: str = "decodiff-diff",
+    cls: str = "decodiff",
 ) -> Tuple[List[str], List[Tuple[int, str, str]]]:
     anchors: List[Tuple[int, str, str]] = []
     counter = 1
@@ -64,16 +64,24 @@ def _read_text(path: str) -> List[str]:
         return f.readlines()
 
 
-def _embed_decodiff_tags(marked_lines, change_info) -> str:
+def _embed_decodiff_tags(marked_lines, change_info, start_offset = 0) -> str:
     changed_line_iter = iter(change_info.changed_lines)
     changed_line = next(changed_line_iter, None)
     new_lines = []
+
+    # skip ignored lines
+    while True:
+        if changed_line.line_no <= -start_offset:
+            changed_line = next(changed_line_iter, None)
+        else:
+            break
+
     for i, md_line in enumerate(marked_lines, start=1):
         if changed_line is None:
             new_lines.append(md_line.line)
             continue
 
-        if i == changed_line.line_no:
+        if i == changed_line.line_no + start_offset:
             if (
                 md_line.is_empty()
                 or md_line.is_code_block()
@@ -100,7 +108,7 @@ def _embed_decodiff_tags(marked_lines, change_info) -> str:
             anchor_no = changed_line.anchor_no
             new_line = (
                 md_line.line[:start]
-                + f'<span id="decodiff-anchor-{anchor_no}" class="decodiff-diff">'
+                + f'<span id="decodiff-anchor-{anchor_no}" class="decodiff">'
                 + md_line.line[start:end]
                 + "</span>"
                 + md_line.line[end:]
@@ -161,7 +169,7 @@ def run(
                 anchor_no = changed_line.anchor_no
                 new_line = (
                     md_line.line[:start]
-                    + f'<span id="decodiff-anchor-{anchor_no}" class="decodiff-diff">'
+                    + f'<span id="decodiff-anchor-{anchor_no}" class="decodiff">'
                     + md_line.line[start:end]
                     + "</span>"
                     + md_line.line[end:]

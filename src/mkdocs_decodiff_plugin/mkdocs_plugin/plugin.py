@@ -18,6 +18,7 @@ from typing import List
 
 try:
     import mkdocs
+    from mkdocs.structure.pages import Page
 except Exception:
     BasePlugin = object
 
@@ -81,7 +82,7 @@ class DecodiffPlugin(mkdocs.plugins.BasePlugin[DecodiffPluginConfig]):
 
         return files
 
-    def on_page_markdown(self, markdown: str, page, config, files):
+    def on_page_markdown(self, markdown: str, page: Page, config, files):
         file_path = os.path.join(page.file.src_dir, page.file.src_path)
 
         md = markdown
@@ -89,8 +90,22 @@ class DecodiffPlugin(mkdocs.plugins.BasePlugin[DecodiffPluginConfig]):
             to_file = os.path.join(self._git_root_dir, change.to_file)
             # checks whether the markdown file has changes
             if file_path == to_file:
+                # Leading empty lines and metadata lines have been removed.
+                # Count how many lines were removed before the current first line appears
+                first_line = markdown.partition("\n")[0]
+                offset = 0
+                raw_md = page.file.content_string
+                while True:
+                    line, _, raw_md = raw_md.partition("\n")
+                    if line == first_line:
+                        break
+                    elif raw_md == "":
+                        break
+                    else:
+                        offset -= 1
+
                 # embed markdif tag and make new markdown
                 marked_lines = mark_markdown_lines(markdown.splitlines())
-                md = _embed_decodiff_tags(marked_lines, change)
+                md = _embed_decodiff_tags(marked_lines, change, offset)
 
         return md
