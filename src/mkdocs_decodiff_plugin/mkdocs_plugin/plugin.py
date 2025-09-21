@@ -107,7 +107,7 @@ class DecodiffPlugin(mkdocs.plugins.BasePlugin[DecodiffPluginConfig]):
 
         # create change=list=file path and initial file
         change_list_file = self.config["change_list_file"]
-        if not change_list_file and change_list_file != "":
+        if change_list_file is not None and change_list_file != "":
             self._change_list_file = os.path.join(
                 os.path.dirname(config.config_file_path), change_list_file
             )
@@ -156,7 +156,7 @@ class DecodiffPlugin(mkdocs.plugins.BasePlugin[DecodiffPluginConfig]):
         file_path = os.path.join(page.file.src_dir, page.file.src_path)
 
         md = markdown
-        if not self._chane_list_file and file_path == self._change_list_file:
+        if self._change_list_file is not None and file_path == self._change_list_file:
             # search decodiff comment
             p = re.compile(
                 rf"{_DECODIFF_CHANGE_LIST_START}.*?{_DECODIFF_CHANGE_LIST_END}",
