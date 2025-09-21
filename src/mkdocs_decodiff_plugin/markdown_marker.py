@@ -16,6 +16,8 @@ class MdLineType(Enum):
     TABLE = 64
     PARAGRAPH = 128
 
+    META = 1024
+
 
 @dataclass(frozen=True)
 class MdLine:
@@ -48,6 +50,9 @@ class MdLine:
     def is_paragraph(self) -> bool:
         return self.line_type & MdLineType.PARAGRAPH.value
 
+    def is_meta(self) -> bool:
+        return self.line_type & MdLineType.META.value
+
     def _line_type_str(self) -> str:
         types = []
         if self.line_type & MdLineType.EMPTY.value:
@@ -66,6 +71,8 @@ class MdLine:
             types.append("T")
         if self.line_type & MdLineType.PARAGRAPH.value:
             types.append("P")
+        if self.line_type & MdLineType.META.value:
+            types.append("M")
 
         return ",".join(types)
 
@@ -82,15 +89,23 @@ class MdMarkContext:
     in_list = False
     in_code_block = False
     in_table = False
+    in_meta = False
 
 
-def _mark_markdown_line(ctx: MdMarkContext, line: str):
+def _mark_markdown_line(ctx: MdMarkContext, line_no: int, line: str):
     """Mark a single line"""
 
     line_type = 0
+    if line_no == 1 and re.search(r"^---\s*$", line):
+        ctx.in_meta = True
+        line_type |= MdLineType.META.value
+    elif ctx.in_meta:
+        line_type |= MdLineType.META.value
+        if re.search(r"^(---|...)\s*$", line):
+            ctx.in_meta = False
     # blocks
     # header
-    if re.search(r"^#+ ", line):
+    elif re.search(r"^#+ ", line):
         line_type |= MdLineType.HEADING.value
 
         ctx.in_quote = False
@@ -229,8 +244,8 @@ def _mark_markdown_line(ctx: MdMarkContext, line: str):
 
 def mark_markdown_lines(lines: List[str]) -> List[MdLine]:
     ctx = MdMarkContext()
-    for line in lines:
-        _mark_markdown_line(ctx, line)
+    for line_no, line in enumerate(lines, start=1):
+        _mark_markdown_line(ctx, line_no, line)
 
     return ctx.lines
 
@@ -240,8 +255,8 @@ def mark_markdown(file_path: str) -> List[MdLine]:
     lines: list[MdLine] = []
     with open(file_path, "r", newline="", encoding="utf-8") as f:
         ctx = MdMarkContext()
-        for _, line in enumerate(f):
-            _mark_markdown_line(ctx, line)
+        for line_no, line in enumerate(f, start=1):
+            _mark_markdown_line(ctx, line_no, line)
 
         lines = ctx.lines
     return lines
