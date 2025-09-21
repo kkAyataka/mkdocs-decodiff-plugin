@@ -13,6 +13,16 @@
         "-s",
         "tests/unit"
       ]
+    },
+    {
+      "name": "e2e mkdocs",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "mkdocs",
+      "cwd": "${workspaceFolder}/tests/e2e-mkdocs",
+      "args": [
+        "build"
+      ]
     }
   ]
 }
