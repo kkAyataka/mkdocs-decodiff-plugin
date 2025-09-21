@@ -1,6 +1,7 @@
 import argparse
 import os
 import re
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 from ._git_diff.git_diff import WordDiff, run_git_diff
@@ -18,7 +19,60 @@ def _read_text(path: str) -> List[str]:
         return f.readlines()
 
 
-def embed_decodiff_tags(marked_lines, change_info, start_offset = 0) -> str:
+@dataclass
+class ChangedItem:
+    line_no: int
+    line: str
+    tagged_line: str
+    anchor: str
+
+
+def embed_decodiff_tags2(marked_lines, change_info) -> List[ChangedItem]:
+    changes: List[ChangedItem] = []
+    for i in change_info.changed_lines:
+        marked_line = marked_lines[i.line_no - 1]
+        if (
+            marked_line.is_meta()
+            or marked_line.is_empty()
+            or marked_line.is_code_block()
+            or marked_line.is_h_rule()
+            or marked_line.is_table()
+        ):
+            continue
+
+        offset = 0
+        if i.col_start == 0:
+            if m := re.search(r"^#+ ", marked_line.line):
+                offset = m.end()
+            elif m := re.search(r"^\s*[*\-+] (\[[ xX]\] )?", marked_line.line):
+                offset = m.end()
+            elif m := re.search(r"^\s*\d+[.)] ", marked_line.line):
+                offset = m.end()
+            elif m := re.search(r"^> ", marked_line.line):
+                offset = m.end()
+
+        start = i.col_start + offset
+        end = i.col_end
+        anchor = f"decodiff-anchor-{i.anchor_no}"
+        new_line = (
+            marked_line.line[:start]
+            + f'<span id="{anchor}" class="decodiff">'
+            + marked_line.line[start:end]
+            + "</span>"
+            + marked_line.line[end:]
+        )
+        changes.append(
+            ChangedItem(
+                line_no=i.line_no,
+                line=marked_line.line,
+                tagged_line=new_line,
+                anchor=anchor,
+            )
+        )
+
+    return changes
+
+def embed_decodiff_tags(marked_lines, change_info, start_offset=0) -> str:
     changed_line_iter = iter(change_info.changed_lines)
     changed_line = next(changed_line_iter, None)
     new_lines = []
