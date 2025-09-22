@@ -1,22 +1,31 @@
+import os
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Optional
 
 from ._git_diff.git_diff import FileDiff, LineDiff
-from .markdown_marker import MdLine
+from .markdown_marker import MdLine, mark_markdown
 
 
 @dataclass
-class ChangedLine:
+class LineChange:
     line_no: int
     line: str
     tagged_line: str
     anchor: str
 
 
+@dataclass
+class FileChange:
+    file_path: str
+    is_removed: bool = False
+    is_added: bool = False
+    line_changes: List[LineChange] = field(default_factory=List)
+
+
 def _embed_decodiff_tag_line(
     marked_line: MdLine, line_diff: LineDiff
-) -> Optional[ChangedLine]:
+) -> Optional[LineChange]:
     if (
         marked_line.is_meta()
         or marked_line.is_empty()
@@ -52,12 +61,14 @@ def _embed_decodiff_tag_line(
         + marked_line.line[end:]
     )
 
-    return ChangedLine(line_diff.line_no, marked_line.line, new_line, anchor)
+    return LineChange(line_diff.line_no, marked_line.line, new_line, anchor)
 
 
-def embed_decodiff_tags2(marked_lines: List[MdLine], diff_info: FileDiff) -> List[ChangedLine]:
-    changes: List[ChangedLine] = []
-    for line_diff in diff_info.line_diffs:
+def embed_decodiff_tags(
+    marked_lines: List[MdLine], file_diff: FileDiff
+) -> List[LineChange]:
+    changes: List[LineChange] = []
+    for line_diff in file_diff.line_diffs:
         marked_line = marked_lines[line_diff.line_no - 1]
         changd_line = _embed_decodiff_tag_line(marked_line, line_diff)
         if changd_line is not None:
@@ -66,32 +77,27 @@ def embed_decodiff_tags2(marked_lines: List[MdLine], diff_info: FileDiff) -> Lis
     return changes
 
 
-def embed_decodiff_tags(marked_lines: List[MdLine], diff_info: FileDiff, start_offset=0) -> str:
-    line_diff_iter = iter(diff_info.line_diffs)
-    line_diff = next(line_diff_iter, None)
-    new_lines = []
-
-    # skip ignored lines
-    while True:
-        if line_diff.line_no <= -start_offset:
-            line_diff = next(line_diff_iter, None)
-        else:
-            break
-
-    for line_no, marked_line in enumerate(marked_lines, start=1):
-        if line_diff is None:
-            new_lines.append(marked_line.line)
+def make_file_changes(
+    git_root_path: str, file_diffs: List[FileDiff]
+) -> List[FileChange]:
+    file_changes: List[FileChange] = []
+    for file_diff in file_diffs:
+        # removed file
+        if file_diff.to_file is None:
+            file_path = os.path.join(git_root_path, file_diff.from_file)
+            file_changes.append(FileChange(file_path, is_removed=True))
             continue
 
-        if line_no == line_diff.line_no + start_offset:
-            changed = _embed_decodiff_tag_line(marked_line, line_diff)
-            if changed is not None:
-                new_lines.append(changed.tagged_line)
-            else:
-                new_lines.append(marked_line.line)
+        file_path = os.path.join(git_root_path, file_diff.to_file)
 
-            line_diff = next(line_diff_iter, None)
-        else:
-            new_lines.append(marked_line.line)
+        # added file
+        if file_diff.from_file is None:
+            file_changes.append(FileChange(file_path, True))
+            continue
 
-    return "\n".join(new_lines)
+        # changed file
+        marked_lines = mark_markdown(file_path)
+        line_changes = embed_decodiff_tags(marked_lines, file_diff)
+        file_changes.append(FileChange(file_path, line_changes=line_changes))
+
+    return file_changes

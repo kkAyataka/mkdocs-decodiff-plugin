@@ -258,10 +258,10 @@ def mark_markdown(file_path: str) -> List[MdLine]:
     """Mark markdown"""
 
     lines: list[MdLine] = []
-    with open(file_path, "r", newline="", encoding="utf-8") as f:
+    with open(file_path, "r", encoding="utf-8") as f:
         ctx = MdMarkContext()
         for line_no, line in enumerate(f, start=1):
-            _mark_markdown_line(ctx, line_no, line)
+            _mark_markdown_line(ctx, line_no, line.rstrip("\n"))
 
         lines = ctx.lines
     return lines
