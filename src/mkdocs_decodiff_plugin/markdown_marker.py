@@ -96,6 +96,7 @@ def _mark_markdown_line(ctx: MdMarkContext, line_no: int, line: str):
     """Mark a single line"""
 
     line_type = 0
+    # Metadata lines of MkDocs
     if line_no == 1 and re.search(r"^---\s*$", line):
         ctx.in_meta = True
         line_type |= MdLineType.META.value
@@ -242,12 +243,16 @@ def _mark_markdown_line(ctx: MdMarkContext, line_no: int, line: str):
 
     ctx.lines.append(MdLine(line, line_type))
 
+
 def mark_markdown_lines(lines: List[str]) -> List[MdLine]:
+    """Mark markdown lines"""
+
     ctx = MdMarkContext()
     for line_no, line in enumerate(lines, start=1):
         _mark_markdown_line(ctx, line_no, line)
 
     return ctx.lines
+
 
 def mark_markdown(file_path: str) -> List[MdLine]:
     """Mark markdown"""
