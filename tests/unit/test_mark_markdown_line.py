@@ -17,6 +17,7 @@ ___
 |c|
 """
 
+
 def test_mark_header():
     """Header"""
 
@@ -31,8 +32,8 @@ def test_mark_header():
         """).strip()
 
     ctx = MdMarkContext()
-    for line in md.splitlines():
-        _mark_markdown_line(ctx, line)
+    for no, line in enumerate(md.splitlines(), start=1):
+        _mark_markdown_line(ctx, no, line)
 
     assert ctx.lines[0]._line_type_str() == "H"
     assert ctx.lines[1]._line_type_str() == "H"
@@ -41,6 +42,7 @@ def test_mark_header():
     assert ctx.lines[4]._line_type_str() == "H"
     assert ctx.lines[5]._line_type_str() == "H"
     assert ctx.lines[6]._line_type_str() == "P"
+
 
 def test_mark_header_after_block():
     """Header after block"""
@@ -73,8 +75,8 @@ def test_mark_header_after_block():
         """).strip()
 
     ctx = MdMarkContext()
-    for line in md.splitlines():
-        _mark_markdown_line(ctx, line)
+    for no, line in enumerate(md.splitlines(), start=1):
+        _mark_markdown_line(ctx, no, line)
 
     assert ctx.lines[0]._line_type_str() == "P"
     assert ctx.lines[1]._line_type_str() == "H"
@@ -107,6 +109,7 @@ def test_mark_header_after_block():
     assert ctx.lines[22]._line_type_str() == "T"
     assert ctx.lines[23]._line_type_str() == "H"
 
+
 def test_mark_quote():
     """Quote"""
 
@@ -122,8 +125,8 @@ def test_mark_quote():
         """).strip()
 
     ctx = MdMarkContext()
-    for line in md.splitlines():
-        _mark_markdown_line(ctx, line)
+    for no, line in enumerate(md.splitlines(), start=1):
+        _mark_markdown_line(ctx, no, line)
 
     assert ctx.lines[0]._line_type_str() == "Q"
     assert ctx.lines[1]._line_type_str() == "Q"
@@ -133,6 +136,7 @@ def test_mark_quote():
     assert ctx.lines[5]._line_type_str() == "Q"
     assert ctx.lines[6]._line_type_str() == "E"
     assert ctx.lines[7]._line_type_str() == "Q"
+
 
 def test_mark_quote_after_block():
     """Quote after block"""
@@ -165,8 +169,8 @@ def test_mark_quote_after_block():
         """).strip()
 
     ctx = MdMarkContext()
-    for line in md.splitlines():
-        _mark_markdown_line(ctx, line)
+    for no, line in enumerate(md.splitlines(), start=1):
+        _mark_markdown_line(ctx, no, line)
 
     assert ctx.lines[0]._line_type_str() == "H"
     assert ctx.lines[1]._line_type_str() == "Q"
@@ -199,6 +203,7 @@ def test_mark_quote_after_block():
     assert ctx.lines[22]._line_type_str() == "T"
     assert ctx.lines[23]._line_type_str() == "Q"
 
+
 def test_mark_paragraph():
     """Paragraph"""
 
@@ -210,13 +215,14 @@ def test_mark_paragraph():
         """).strip()
 
     ctx = MdMarkContext()
-    for line in md.splitlines():
-        _mark_markdown_line(ctx, line)
+    for no, line in enumerate(md.splitlines(), start=1):
+        _mark_markdown_line(ctx, no, line)
 
     assert ctx.lines[0]._line_type_str() == "P"
     assert ctx.lines[1]._line_type_str() == "P"
     assert ctx.lines[2]._line_type_str() == "E"
     assert ctx.lines[3]._line_type_str() == "P"
+
 
 def test_mark_paragraph_after_block():
     """Paragraph after block"""
@@ -251,8 +257,8 @@ def test_mark_paragraph_after_block():
         """).strip()
 
     ctx = MdMarkContext()
-    for line in md.splitlines():
-        _mark_markdown_line(ctx, line)
+    for no, line in enumerate(md.splitlines(), start=1):
+        _mark_markdown_line(ctx, no, line)
 
     assert ctx.lines[0]._line_type_str() == "H"
     assert ctx.lines[1]._line_type_str() == "P"
@@ -287,6 +293,7 @@ def test_mark_paragraph_after_block():
     assert ctx.lines[24]._line_type_str() == "T"
     assert ctx.lines[25]._line_type_str() == "P"
 
+
 def test_mark_list():
     """List"""
 
@@ -304,8 +311,8 @@ def test_mark_list():
         """).strip()
 
     ctx = MdMarkContext()
-    for line in md.splitlines():
-        _mark_markdown_line(ctx, line)
+    for no, line in enumerate(md.splitlines(), start=1):
+        _mark_markdown_line(ctx, no, line)
 
     assert ctx.lines[0]._line_type_str() == "L"
     assert ctx.lines[1]._line_type_str() == "L"
@@ -317,6 +324,7 @@ def test_mark_list():
     assert ctx.lines[7]._line_type_str() == "L"
     assert ctx.lines[8]._line_type_str() == "E"
     assert ctx.lines[9]._line_type_str() == "L"
+
 
 def test_mark_list_after_block():
     """List after block"""
@@ -349,8 +357,8 @@ def test_mark_list_after_block():
         """).strip()
 
     ctx = MdMarkContext()
-    for line in md.splitlines():
-        _mark_markdown_line(ctx, line)
+    for no, line in enumerate(md.splitlines(), start=1):
+        _mark_markdown_line(ctx, no, line)
 
     assert ctx.lines[0]._line_type_str() == "H"
     assert ctx.lines[1]._line_type_str() == "L"

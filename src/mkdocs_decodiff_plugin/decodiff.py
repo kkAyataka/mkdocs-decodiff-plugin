@@ -1,263 +1,103 @@
-import argparse
 import os
 import re
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from dataclasses import dataclass, field
+from typing import List, Optional
 
-from ._git_diff.git_diff import WordDiff, run_git_diff
-from ._git_diff.parse_porcelain_diff import parse_porcelain_diff
-from .markdown_marker import mark_markdown
-
-
-def _write_text(path: str, lines: List[str]) -> None:
-    with open(path, "w", encoding="utf-8") as f:
-        f.writelines(lines)
-
-
-def _read_text(path: str) -> List[str]:
-    with open(path, "r", encoding="utf-8") as f:
-        return f.readlines()
+from ._git_diff.git_diff import FileDiff, LineDiff
+from .markdown_marker import MdLine, mark_markdown
 
 
 @dataclass
-class ChangedItem:
+class LineChange:
     line_no: int
     line: str
     tagged_line: str
     anchor: str
 
 
-def embed_decodiff_tags2(marked_lines, change_info) -> List[ChangedItem]:
-    changes: List[ChangedItem] = []
-    for i in change_info.changed_lines:
-        marked_line = marked_lines[i.line_no - 1]
-        if (
-            marked_line.is_meta()
-            or marked_line.is_empty()
-            or marked_line.is_code_block()
-            or marked_line.is_h_rule()
-            or marked_line.is_table()
-        ):
-            continue
+@dataclass
+class FileChange:
+    file_path: str
+    is_removed: bool = False
+    is_added: bool = False
+    line_changes: List[LineChange] = field(default_factory=List)
 
-        offset = 0
-        if i.col_start == 0:
-            if m := re.search(r"^#+ ", marked_line.line):
-                offset = m.end()
-            elif m := re.search(r"^\s*[*\-+] (\[[ xX]\] )?", marked_line.line):
-                offset = m.end()
-            elif m := re.search(r"^\s*\d+[.)] ", marked_line.line):
-                offset = m.end()
-            elif m := re.search(r"^> ", marked_line.line):
-                offset = m.end()
 
-        start = i.col_start + offset
-        end = i.col_end
-        anchor = f"decodiff-anchor-{i.anchor_no}"
-        new_line = (
-            marked_line.line[:start]
-            + f'<span id="{anchor}" class="decodiff">'
-            + marked_line.line[start:end]
-            + "</span>"
-            + marked_line.line[end:]
-        )
-        changes.append(
-            ChangedItem(
-                line_no=i.line_no,
-                line=marked_line.line,
-                tagged_line=new_line,
-                anchor=anchor,
-            )
-        )
+def _embed_decodiff_tag_line(
+    marked_line: MdLine, line_diff: LineDiff
+) -> Optional[LineChange]:
+    if (
+        marked_line.is_meta()
+        or marked_line.is_empty()
+        or marked_line.is_code_block()
+        or marked_line.is_h_rule()
+        or marked_line.is_table()
+    ):
+        return None
+
+    col_offset = 0
+    if line_diff.col_start == 0:
+        # heading
+        if m := re.search(r"^#+ ", marked_line.line):
+            col_offset = m.end()
+        # list
+        elif m := re.search(r"^\s*[*\-+] (\[[ xX]\] )?", marked_line.line):
+            col_offset = m.end()
+        # numbered list
+        elif m := re.search(r"^\s*\d+[.)] ", marked_line.line):
+            col_offset = m.end()
+        # quote
+        elif m := re.search(r"^> ", marked_line.line):
+            col_offset = m.end()
+
+    start = line_diff.col_start + col_offset
+    end = line_diff.col_end
+    anchor = f"decodiff-anchor-{line_diff.anchor_no}"
+    new_line = (
+        marked_line.line[:start]
+        + f'<span id="{anchor}" class="decodiff">'
+        + marked_line.line[start:end]
+        + "</span>"
+        + marked_line.line[end:]
+    )
+
+    return LineChange(line_diff.line_no, marked_line.line, new_line, anchor)
+
+
+def embed_decodiff_tags(
+    marked_lines: List[MdLine], file_diff: FileDiff
+) -> List[LineChange]:
+    changes: List[LineChange] = []
+    for line_diff in file_diff.line_diffs:
+        marked_line = marked_lines[line_diff.line_no - 1]
+        changd_line = _embed_decodiff_tag_line(marked_line, line_diff)
+        if changd_line is not None:
+            changes.append(changd_line)
 
     return changes
 
-def embed_decodiff_tags(marked_lines, change_info, start_offset=0) -> str:
-    changed_line_iter = iter(change_info.changed_lines)
-    changed_line = next(changed_line_iter, None)
-    new_lines = []
 
-    # skip ignored lines
-    while True:
-        if changed_line.line_no <= -start_offset:
-            changed_line = next(changed_line_iter, None)
-        else:
-            break
-
-    for i, md_line in enumerate(marked_lines, start=1):
-        if changed_line is None:
-            new_lines.append(md_line.line)
+def make_file_changes(
+    git_root_path: str, file_diffs: List[FileDiff]
+) -> List[FileChange]:
+    file_changes: List[FileChange] = []
+    for file_diff in file_diffs:
+        # removed file
+        if file_diff.to_file is None:
+            file_path = os.path.join(git_root_path, file_diff.from_file)
+            file_changes.append(FileChange(file_path, is_removed=True))
             continue
 
-        if i == changed_line.line_no + start_offset:
-            if (
-                md_line.is_empty()
-                or md_line.is_code_block()
-                or md_line.is_h_rule()
-                or md_line.is_table()
-            ):
-                new_lines.append(md_line.line)
-                changed_line = next(changed_line_iter, None)
-                continue
+        file_path = os.path.join(git_root_path, file_diff.to_file)
 
-            offset = 0
-            if changed_line.col_start == 0:
-                if m := re.search(r"^#+ ", md_line.line):
-                    offset = m.end()
-                elif m := re.search(r"^\s*[*\-+] (\[[ xX]\] )?", md_line.line):
-                    offset = m.end()
-                elif m := re.search(r"^\s*\d+[.)] ", md_line.line):
-                    offset = m.end()
-                elif m := re.search(r"^> ", md_line.line):
-                    offset = m.end()
-
-            start = changed_line.col_start + offset
-            end = changed_line.col_end
-            anchor_no = changed_line.anchor_no
-            new_line = (
-                md_line.line[:start]
-                + f'<span id="decodiff-anchor-{anchor_no}" class="decodiff">'
-                + md_line.line[start:end]
-                + "</span>"
-                + md_line.line[end:]
-            )
-            new_lines.append(new_line)
-
-            changed_line = next(changed_line_iter, None)
-        else:
-            new_lines.append(md_line.line)
-
-    return "\n".join(new_lines)
-
-
-def run(
-    base: str,
-    target_dir: Optional[str],
-    change_list_file: Optional[str],
-) -> int:
-    diff = run_git_diff(base, WordDiff.PORCELAIN, target_dir)
-    changes = parse_porcelain_diff(diff)
-
-    for c in changes:
-        if c.from_file is None or c.to_file is None:
+        # added file
+        if file_diff.from_file is None:
+            file_changes.append(FileChange(file_path, True))
             continue
 
-        if c.changed_lines is None or len(c.changed_lines) == 0:
-            continue
+        # changed file
+        marked_lines = mark_markdown(file_path)
+        line_changes = embed_decodiff_tags(marked_lines, file_diff)
+        file_changes.append(FileChange(file_path, line_changes=line_changes))
 
-        md_lines = mark_markdown(c.to_file)
-
-        changed_line_iter = iter(c.changed_lines)
-        changed_line = next(changed_line_iter, None)
-        new_lines = []
-        for i, md_line in enumerate(md_lines, start=1):
-            if changed_line is None:
-                new_lines.append(md_line.line)
-                continue
-
-            if i == changed_line.line_no:
-                if md_line.is_code_block() or md_line.is_h_rule() or md_line.is_table():
-                    new_lines.append(md_line.line)
-                    changed_line = next(changed_line_iter, None)
-                    continue
-
-                offset = 0
-                if changed_line.col_start == 0:
-                    if m := re.search(r"^#+ ", md_line.line):
-                        offset = m.end()
-                    elif m := re.search(r"^\s*[*\-+] (\[[ xX]\] )?", md_line.line):
-                        offset = m.end()
-                    elif m := re.search(r"^\s*\d+[.)] ", md_line.line):
-                        offset = m.end()
-                    elif m := re.search(r"^> ", md_line.line):
-                        offset = m.end()
-
-                start = changed_line.col_start + offset
-                end = changed_line.col_end
-                anchor_no = changed_line.anchor_no
-                new_line = (
-                    md_line.line[:start]
-                    + f'<span id="decodiff-anchor-{anchor_no}" class="decodiff">'
-                    + md_line.line[start:end]
-                    + "</span>"
-                    + md_line.line[end:]
-                )
-                new_lines.append(new_line)
-
-                print(f"--- anchor {changed_line.anchor_no} ---")
-                print(md_line.line)
-                print(new_line)
-                changed_line = next(changed_line_iter, None)
-            else:
-                new_lines.append(md_line.line)
-
-        # with open(c.to_file, "w", newline="", encoding="utf-8") as f:
-        #     f.writelines(new_lines)
-
-    return 0
-    # file -> list of (anchor_id, label)
-    grouped_links: Dict[str, List[Tuple[str, str]]] = {}
-
-    if change_list_file and grouped_links:
-        # Produce a Markdown change list grouped by file with metadata
-        from datetime import date
-
-        md_lines: List[str] = ["# Changes\n\n"]
-        md_lines.append(f"* Generated on: {date.today().isoformat()}\n")
-        md_lines.append(f"* Base commit: {base}\n\n")
-
-        for file_path, anchors in grouped_links.items():
-            md_lines.append(f"## [{file_path}]({file_path})\n\n")
-            for anchor_id, label in anchors:
-                # Fallback label if empty
-                link_label = label if label.strip() else anchor_id
-                link = f"{file_path}#{anchor_id}"
-                md_lines.append(f"* [{link_label}]({link})\n")
-            md_lines.append("\n")
-        os.makedirs(os.path.dirname(change_list_file) or ".", exist_ok=True)
-        _write_text(change_list_file, md_lines)
-
-    return 0
-
-
-def build_arg_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(
-        prog="mkdocs_decodiff_plugin",
-        description=(
-            "Insert HTML tags into Markdown files for changed lines based on git diff."
-        ),
-    )
-    p.add_argument(
-        "--base",
-        required=True,
-        help="Base commit, tag, or branch to diff against (compares base..HEAD)",
-    )
-    p.add_argument(
-        "--dir",
-        dest="target_dir",
-        default=None,
-        help="Target directory to limit diff (e.g., docs)",
-    )
-    p.add_argument(
-        "--change-list-file",
-        dest="change_list_file",
-        default=None,
-        help="Path to write a Markdown list of links to changed anchors",
-    )
-    p.add_argument(
-        "--min-change-chars",
-        type=int,
-        default=3,
-        help="Minimum changed characters; shorter changes aren’t annotated or listed.",
-    )
-    return p
-
-
-def main(argv: Optional[List[str]] = None) -> int:
-    parser = build_arg_parser()
-    args = parser.parse_args(argv)
-    try:
-        return run(args.base, args.target_dir, args.change_list_file)
-    except Exception as e:
-        print(f"decodiff error: {e}")
-        return 2
+    return file_changes

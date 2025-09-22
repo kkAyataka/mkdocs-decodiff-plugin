@@ -15,6 +15,7 @@ from __future__ import annotations
 import os
 import re
 import subprocess
+import sys
 from dataclasses import dataclass, field
 from typing import List
 
@@ -24,44 +25,55 @@ try:
 except Exception:
     BasePlugin = object
 
-from .._git_diff.git_diff import ChangeInfo, WordDiff, run_git_diff
+from .._git_diff.git_diff import FileDiff, WordDiff, run_git_diff
 from .._git_diff.parse_porcelain_diff import parse_porcelain_diff
 from .._git_diff.parse_unified_diff import parse_unified_diff
-from ..decodiff import embed_decodiff_tags, embed_decodiff_tags2
-from ..markdown_marker import mark_markdown, mark_markdown_lines
+from ..decodiff import (
+    FileChange,
+    LineChange,
+    make_file_changes,
+)
 
 
 @dataclass
-class ChangedFile:
+class ChangeListItem:
     file_path: str
-
     is_new: bool = False
-    changes: List[any] = field(default_factory=list)
+    changes: List[LineChange] = field(default_factory=list)
 
 
 _DECODIFF_CHANGE_LIST_START = "<!-- decodiff: Written by decodiff from here -->"
 _DECODIFF_CHANGE_LIST_END = "<!-- decodiff: end -->"
 
 
-def _filter_changes(root_path: str, changes: List[ChangeInfo]):
-    changed_files = []
-    for c in changes:
-        if c.to_file is None:
-            # ignore delted files
+def _make_change_list_md(
+    change_list_file_path: str, file_changes: List[FileChange]
+) -> str:
+    md = ""
+
+    change_list_file_dir = os.path.dirname(change_list_file_path)
+    for file_change in file_changes:
+        # ignore removed file
+        if file_change.is_removed:
             continue
 
-        file_path = os.path.join(root_path, c.to_file)
+        relpath = os.path.relpath(file_change.file_path, change_list_file_dir)
+        md += "\n" if not md else ""
+        md += f"## [{relpath}]({relpath})\n\n"
 
-        if c.from_file is None:
-            changed_files.append(ChangedFile(file_path=file_path, is_new=True))
+        # added file
+        if file_change.is_added:
+            md += "* New\n"
             continue
 
-        marked_lines = mark_markdown(file_path)
-        changed = embed_decodiff_tags2(marked_lines, c)
+        # changed file
+        for line_change in file_change.line_changes:
+            text = line_change.line.strip()
+            text = f"{text[:40]}{'...' if len(text) > 40 else ''}"
 
-        changed_files.append(ChangedFile(file_path=file_path, changes=changed))
+            md += f"* [{text}]({relpath}#{line_change.anchor})\n"
 
-    return changed_files
+    return md
 
 
 def _get_git_root_dir():
@@ -83,56 +95,51 @@ class DecodiffPluginConfig(mkdocs.config.base.Config):
 
 class DecodiffPlugin(mkdocs.plugins.BasePlugin[DecodiffPluginConfig]):
     _git_root_dir: str = None
-    _changes: List[ChangeInfo] = []
-    _change_list_file: str = None
+    _file_changes: List[FileChange] = []
+    _file_diffs: List[FileDiff] = []
+    _change_list_file_path: str = None
     _change_list_md: str = None
 
     def on_pre_build(self, config):
         # git root
         self._git_root_dir = _get_git_root_dir()
 
-        # get diff data
-        changes: List[ChangeInfo] = []
+        # get diff
+        file_diffs: List[FileDiff] = []
         if self.config["word_diff"]:
             gitdiff = run_git_diff(
                 self.config["base"], WordDiff.PORCELAIN, self.config["dir"]
             )
-            changes = parse_porcelain_diff(gitdiff)
+            file_diffs = parse_porcelain_diff(gitdiff)
         else:
             gitdiff = run_git_diff(
                 self.config["base"], WordDiff.NONE, self.config["dir"]
             )
-            changes = parse_unified_diff(gitdiff)
-        self._changes = changes
+            file_diffs = parse_unified_diff(gitdiff)
+        self._file_diffs = file_diffs
 
-        # create change=list=file path and initial file
-        change_list_file = self.config["change_list_file"]
-        if change_list_file is not None and change_list_file != "":
-            self._change_list_file = os.path.join(
-                os.path.dirname(config.config_file_path), change_list_file
-            )
-            if not os.path.exists(self._change_list_file):
-                with open(self._change_list_file, "w", encoding="utf-8") as f:
-                    f.write("# Changes\n\n")
-                    f.write(f"{_DECODIFF_CHANGE_LIST_START}\n\n")
-                    f.write(f"{_DECODIFF_CHANGE_LIST_END}\n")
+        # make file changes
+        self._file_changes = make_file_changes(self._git_root_dir, self._file_diffs)
 
-            filtered_changes = _filter_changes(self._git_root_dir, changes)
-            md = ""
-            for c in filtered_changes:
-                relpath = os.path.relpath(
-                    c.file_path, os.path.dirname(self._change_list_file)
+        # change list
+        change_list_file_path = self.config["change_list_file"]
+        if change_list_file_path is not None and change_list_file_path:
+            if os.path.isabs(change_list_file_path):
+                self._change_list_file_path = change_list_file_path
+            else:
+                self._change_list_file_path = os.path.join(
+                    os.path.dirname(config.config_file_path), change_list_file_path
                 )
-                if c.is_new:
-                    md += f"\n## [{relpath}]({relpath})\n\n"
-                    md += "* New\n"
-                else:
-                    md += f"## [{relpath}]({relpath})\n\n"
-                    for change in c.changes:
-                        text = change.line.strip()
-                        text = f"{text[:40]}{'...' if len(text) > 40 else ''}"
-                        md += f"* [{text}]({relpath}#{change.anchor})\n"
-            self._change_list_md = md
+
+            if not os.path.exists(self._change_list_file_path):
+                print(
+                    f"Change list file is not found: {self.config['change_list_file']}",
+                    file=sys.stderr,
+                )
+            else:
+                self._change_list_md = _make_change_list_md(
+                    self._change_list_file_path, self._file_changes
+                )
 
     def on_config(self, config):
         config.extra_css.insert(0, "assets/decodiff/decodiff.css")
@@ -156,40 +163,51 @@ class DecodiffPlugin(mkdocs.plugins.BasePlugin[DecodiffPluginConfig]):
         file_path = os.path.join(page.file.src_dir, page.file.src_path)
 
         md = markdown
-        if self._change_list_file is not None and file_path == self._change_list_file:
+
+        # change list file
+        if (
+            self._change_list_file_path is not None
+            and file_path == self._change_list_file_path
+        ):
             # search decodiff comment
             p = re.compile(
                 rf"{_DECODIFF_CHANGE_LIST_START}.*?{_DECODIFF_CHANGE_LIST_END}",
                 re.DOTALL,
             )
-            list_md = f"{_DECODIFF_CHANGE_LIST_START}\n\n{self._change_list_md}{_DECODIFF_CHANGE_LIST_END}\n"
+            change_list_md = f"{_DECODIFF_CHANGE_LIST_START}\n\n{self._change_list_md}{_DECODIFF_CHANGE_LIST_END}\n"
 
             # try replace
-            md, num = p.subn(list_md, md)
+            md, num = p.subn(change_list_md, md)
             if num <= 0:
                 # if the decodiff comment is not found, add to the tail
-                md += "\n" + list_md
+                md += "\n" + change_list_md
 
-        for change in self._changes:
-            to_file = os.path.join(self._git_root_dir, change.to_file)
+        # chagned file
+        for file_change in self._file_changes:
             # checks whether the markdown file has changes
-            if file_path == to_file:
+            if file_path == file_change.file_path:
                 # Leading empty lines and metadata lines have been removed.
                 # Count how many lines were removed before the current first line appears
                 first_line = markdown.partition("\n")[0]
-                offset = 0
                 raw_md = page.file.content_string
+                offset = 0
                 while True:
+                    # read 1 line
                     line, _, raw_md = raw_md.partition("\n")
                     if line == first_line:
                         break
                     elif raw_md == "":
+                        # file is end
                         break
                     else:
-                        offset -= 1
+                        # It is removed line from raw content
+                        # It is metadata or empty lines at head
+                        offset += 1
 
-                # embed markdif tag and make new markdown
-                marked_lines = mark_markdown_lines(markdown.splitlines())
-                md = embed_decodiff_tags(marked_lines, change, offset)
+                # replave changed lines
+                md_lines = markdown.splitlines()
+                for line_change in file_change.line_changes:
+                    md_lines[line_change.line_no - offset - 1] = line_change.tagged_line
+                md = "\n".join(md_lines)
 
         return md
