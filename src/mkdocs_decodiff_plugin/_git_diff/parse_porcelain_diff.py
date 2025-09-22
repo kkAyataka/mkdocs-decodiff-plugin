@@ -2,20 +2,20 @@ import re
 import sys
 from typing import List
 
-from .git_diff import ChangeInfo, LineInfo
+from .git_diff import FileDiff, LineDiff
 
 
-def parse_porcelain_diff(diff_text: str) -> List[ChangeInfo]:
+def parse_porcelain_diff(diff_text: str) -> List[FileDiff]:
     """Parses a porcelain diff text."""
 
-    changed: List[ChangeInfo] = []
+    changed: List[FileDiff] = []
     anchor_no = 0
 
     is_completed = False
 
     from_file = None
     to_file = None
-    line_info_list: List[LineInfo] = []
+    line_info_list: List[LineDiff] = []
 
     hunk_to_file_start = 0
     hunk_start = 0
@@ -40,7 +40,7 @@ def parse_porcelain_diff(diff_text: str) -> List[ChangeInfo]:
                 hunk_col_pos += len(line) - 1
             elif line.startswith("+"):
                 line_info_list.append(
-                    LineInfo(
+                    LineDiff(
                         hunk_to_file_start + hunk_scanned_line_count,
                         hunk_col_pos,
                         hunk_col_pos + len(line) - 1,
@@ -58,7 +58,7 @@ def parse_porcelain_diff(diff_text: str) -> List[ChangeInfo]:
         if line.startswith("diff --git "):
             if from_file is not None or to_file is not None:
                 # previous file end
-                changed.append(ChangeInfo(from_file, to_file, line_info_list))
+                changed.append(FileDiff(from_file, to_file, line_info_list))
             # reset
             is_completed = False
             from_file = None
@@ -106,7 +106,7 @@ def parse_porcelain_diff(diff_text: str) -> List[ChangeInfo]:
         # file is deleted or added
         if from_file is None or to_file is None:
             is_completed = True
-            changed.append(ChangeInfo(from_file, to_file, []))
+            changed.append(FileDiff(from_file, to_file, []))
             continue
 
         # hunk
@@ -129,7 +129,7 @@ def parse_porcelain_diff(diff_text: str) -> List[ChangeInfo]:
 
     if from_file is not None or to_file is not None:
         # previous file end
-        changed.append(ChangeInfo(from_file, to_file, line_info_list))
+        changed.append(FileDiff(from_file, to_file, line_info_list))
 
     # remove empty entries
     return changed

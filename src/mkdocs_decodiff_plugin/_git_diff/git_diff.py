@@ -5,7 +5,7 @@ from typing import List, Optional
 
 
 @dataclass
-class LineInfo:
+class LineDiff:
     line_no: int
     col_start: int
     col_end: int
@@ -13,13 +13,15 @@ class LineInfo:
 
 
 @dataclass
-class ChangeInfo:
+class FileDiff:
     from_file: Optional[str] = None
     to_file: Optional[str] = None
-    changed_lines: List[LineInfo] = field(default_factory=list)
+    line_diffs: List[LineDiff] = field(default_factory=list)
 
 
 class WordDiff(Enum):
+    """--word-diff option type of git-diff"""
+
     # COLOR = 1
     # PLAIN = 2
     PORCELAIN = 3

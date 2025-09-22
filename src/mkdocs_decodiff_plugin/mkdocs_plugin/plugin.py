@@ -24,10 +24,10 @@ try:
 except Exception:
     BasePlugin = object
 
-from .._git_diff.git_diff import ChangeInfo, WordDiff, run_git_diff
+from .._git_diff.git_diff import FileDiff, WordDiff, run_git_diff
 from .._git_diff.parse_porcelain_diff import parse_porcelain_diff
 from .._git_diff.parse_unified_diff import parse_unified_diff
-from ..decodiff import embed_decodiff_tags, embed_decodiff_tags2
+from ..decodiff import ChangedLine, embed_decodiff_tags, embed_decodiff_tags2
 from ..markdown_marker import mark_markdown, mark_markdown_lines
 
 
@@ -36,14 +36,14 @@ class ChangedFile:
     file_path: str
 
     is_new: bool = False
-    changes: List[any] = field(default_factory=list)
+    changes: List[ChangedLine] = field(default_factory=list)
 
 
 _DECODIFF_CHANGE_LIST_START = "<!-- decodiff: Written by decodiff from here -->"
 _DECODIFF_CHANGE_LIST_END = "<!-- decodiff: end -->"
 
 
-def _filter_changes(root_path: str, changes: List[ChangeInfo]):
+def _filter_changes(root_path: str, changes: List[FileDiff]) -> List[ChangedFile]:
     changed_files = []
     for c in changes:
         if c.to_file is None:
@@ -83,7 +83,7 @@ class DecodiffPluginConfig(mkdocs.config.base.Config):
 
 class DecodiffPlugin(mkdocs.plugins.BasePlugin[DecodiffPluginConfig]):
     _git_root_dir: str = None
-    _changes: List[ChangeInfo] = []
+    _diffs: List[FileDiff] = []
     _change_list_file: str = None
     _change_list_md: str = None
 
@@ -92,18 +92,18 @@ class DecodiffPlugin(mkdocs.plugins.BasePlugin[DecodiffPluginConfig]):
         self._git_root_dir = _get_git_root_dir()
 
         # get diff data
-        changes: List[ChangeInfo] = []
+        diffs: List[FileDiff] = []
         if self.config["word_diff"]:
             gitdiff = run_git_diff(
                 self.config["base"], WordDiff.PORCELAIN, self.config["dir"]
             )
-            changes = parse_porcelain_diff(gitdiff)
+            diffs = parse_porcelain_diff(gitdiff)
         else:
             gitdiff = run_git_diff(
                 self.config["base"], WordDiff.NONE, self.config["dir"]
             )
-            changes = parse_unified_diff(gitdiff)
-        self._changes = changes
+            diffs = parse_unified_diff(gitdiff)
+        self._diffs = diffs
 
         # create change=list=file path and initial file
         change_list_file = self.config["change_list_file"]
@@ -117,7 +117,7 @@ class DecodiffPlugin(mkdocs.plugins.BasePlugin[DecodiffPluginConfig]):
                     f.write(f"{_DECODIFF_CHANGE_LIST_START}\n\n")
                     f.write(f"{_DECODIFF_CHANGE_LIST_END}\n")
 
-            filtered_changes = _filter_changes(self._git_root_dir, changes)
+            filtered_changes = _filter_changes(self._git_root_dir, diffs)
             md = ""
             for c in filtered_changes:
                 relpath = os.path.relpath(
@@ -128,10 +128,10 @@ class DecodiffPlugin(mkdocs.plugins.BasePlugin[DecodiffPluginConfig]):
                     md += "* New\n"
                 else:
                     md += f"## [{relpath}]({relpath})\n\n"
-                    for change in c.changes:
-                        text = change.line.strip()
+                    for changed_line in c.changes:
+                        text = changed_line.tagged_line.strip()
                         text = f"{text[:40]}{'...' if len(text) > 40 else ''}"
-                        md += f"* [{text}]({relpath}#{change.anchor})\n"
+                        md += f"* [{text}]({relpath}#{changed_line.anchor})\n"
             self._change_list_md = md
 
     def on_config(self, config):
@@ -170,7 +170,7 @@ class DecodiffPlugin(mkdocs.plugins.BasePlugin[DecodiffPluginConfig]):
                 # if the decodiff comment is not found, add to the tail
                 md += "\n" + list_md
 
-        for change in self._changes:
+        for change in self._diffs:
             to_file = os.path.join(self._git_root_dir, change.to_file)
             # checks whether the markdown file has changes
             if file_path == to_file:

@@ -2,14 +2,14 @@ import re
 import sys
 from typing import List
 
-from .git_diff import ChangeInfo, LineInfo
+from .git_diff import FileDiff, LineDiff
 
 
-def parse_unified_diff(diff_text: str) -> List[ChangeInfo]:
-    """Parses unified diff (git diff --word-diff=plain) text."""
+def parse_unified_diff(diff_text: str) -> List[FileDiff]:
+    """Parses unified diff (git diff --word-diff=none) text"""
 
-    changed: List[ChangeInfo] = []
-    changed_lines: List[LineInfo] = []
+    diffs: List[FileDiff] = []
+    diff_lines: List[LineDiff] = []
     is_not_markdown = False
     is_removed_or_added_file = False
     from_file = None
@@ -29,8 +29,8 @@ def parse_unified_diff(diff_text: str) -> List[ChangeInfo]:
                 # ignore removed lines
                 pass
             elif line.startswith("+"):
-                changed_lines.append(
-                    LineInfo(
+                diff_lines.append(
+                    LineDiff(
                         hunk_to_file_start + hunk_scanned_line_count,
                         0,
                         len(line) - 1,
@@ -50,16 +50,12 @@ def parse_unified_diff(diff_text: str) -> List[ChangeInfo]:
 
         # start file
         if line.startswith("diff --git "):
-            if (
-                not is_not_markdown
-                and from_file is not None
-                or to_file is not None
-            ):
+            if not is_not_markdown and (from_file is not None or to_file is not None):
                 # save previouse file
-                changed.append(ChangeInfo(from_file, to_file, changed_lines))
+                diffs.append(FileDiff(from_file, to_file, diff_lines))
 
             # reset
-            changed_lines = []
+            diff_lines = []
             is_not_markdown = False
             is_removed_or_added_file = False
             from_file = None
@@ -136,8 +132,8 @@ def parse_unified_diff(diff_text: str) -> List[ChangeInfo]:
     if (
         not is_not_markdown
         and (from_file is not None or to_file is not None)
-        and len(changed_lines) > 0
+        and len(diff_lines) > 0
     ):
-        changed.append(ChangeInfo(from_file, to_file, changed_lines))
+        diffs.append(FileDiff(from_file, to_file, diff_lines))
 
-    return changed
+    return diffs
