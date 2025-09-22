@@ -31,8 +31,8 @@ def test_mark_header():
         """).strip()
 
     ctx = MdMarkContext()
-    for line in md.splitlines():
-        _mark_markdown_line(ctx, line)
+    for no, line in enumerate(md.splitlines(), start=1):
+        _mark_markdown_line(ctx, no, line)
 
     assert ctx.lines[0]._line_type_str() == "H"
     assert ctx.lines[1]._line_type_str() == "H"
@@ -73,8 +73,8 @@ def test_mark_header_after_block():
         """).strip()
 
     ctx = MdMarkContext()
-    for line in md.splitlines():
-        _mark_markdown_line(ctx, line)
+    for no, line in enumerate(md.splitlines(), start=1):
+        _mark_markdown_line(ctx, no, line)
 
     assert ctx.lines[0]._line_type_str() == "P"
     assert ctx.lines[1]._line_type_str() == "H"
@@ -122,8 +122,8 @@ def test_mark_quote():
         """).strip()
 
     ctx = MdMarkContext()
-    for line in md.splitlines():
-        _mark_markdown_line(ctx, line)
+    for no, line in enumerate(md.splitlines(), start=1):
+        _mark_markdown_line(ctx, no, line)
 
     assert ctx.lines[0]._line_type_str() == "Q"
     assert ctx.lines[1]._line_type_str() == "Q"
@@ -165,8 +165,8 @@ def test_mark_quote_after_block():
         """).strip()
 
     ctx = MdMarkContext()
-    for line in md.splitlines():
-        _mark_markdown_line(ctx, line)
+    for no, line in enumerate(md.splitlines(), start=1):
+        _mark_markdown_line(ctx, no, line)
 
     assert ctx.lines[0]._line_type_str() == "H"
     assert ctx.lines[1]._line_type_str() == "Q"
@@ -210,8 +210,8 @@ def test_mark_paragraph():
         """).strip()
 
     ctx = MdMarkContext()
-    for line in md.splitlines():
-        _mark_markdown_line(ctx, line)
+    for no, line in enumerate(md.splitlines(), start=1):
+        _mark_markdown_line(ctx, no, line)
 
     assert ctx.lines[0]._line_type_str() == "P"
     assert ctx.lines[1]._line_type_str() == "P"
@@ -251,8 +251,8 @@ def test_mark_paragraph_after_block():
         """).strip()
 
     ctx = MdMarkContext()
-    for line in md.splitlines():
-        _mark_markdown_line(ctx, line)
+    for no, line in enumerate(md.splitlines(), start=1):
+        _mark_markdown_line(ctx, no, line)
 
     assert ctx.lines[0]._line_type_str() == "H"
     assert ctx.lines[1]._line_type_str() == "P"
@@ -304,8 +304,8 @@ def test_mark_list():
         """).strip()
 
     ctx = MdMarkContext()
-    for line in md.splitlines():
-        _mark_markdown_line(ctx, line)
+    for no, line in enumerate(md.splitlines(), start=1):
+        _mark_markdown_line(ctx, no, line)
 
     assert ctx.lines[0]._line_type_str() == "L"
     assert ctx.lines[1]._line_type_str() == "L"
@@ -349,8 +349,8 @@ def test_mark_list_after_block():
         """).strip()
 
     ctx = MdMarkContext()
-    for line in md.splitlines():
-        _mark_markdown_line(ctx, line)
+    for no, line in enumerate(md.splitlines(), start=1):
+        _mark_markdown_line(ctx, no, line)
 
     assert ctx.lines[0]._line_type_str() == "H"
     assert ctx.lines[1]._line_type_str() == "L"
