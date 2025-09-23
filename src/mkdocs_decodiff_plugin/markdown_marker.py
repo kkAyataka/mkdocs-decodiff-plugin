@@ -30,7 +30,7 @@ class MdLine:
         return self.line_type & MdLineType.EMPTY.value
 
     def is_heading(self) -> bool:
-        return self.line_type & MdLineType.EMPTY.value
+        return self.line_type & MdLineType.HEADING.value
 
     def is_quote(self) -> bool:
         return self.line_type & MdLineType.QUOTE.value
@@ -88,14 +88,35 @@ class MdMarkContext:
     in_quote = False
     in_list = False
     in_code_block = False
+    in_indent_code_block = False
     in_table = False
     in_meta = False
+
+    def set(
+        self,
+        in_quote=False,
+        in_list=False,
+        in_code_block=False,
+        in_indent_code_block=False,
+        in_table=False,
+        in_meta=False,
+    ):
+        self.in_quote = in_quote
+        self.in_list = in_list
+        self.in_code_block = in_code_block
+        self.in_indent_code_block = in_indent_code_block
+        self.in_table = in_table
+        self.in_meta = in_meta
 
 
 def _mark_markdown_line(ctx: MdMarkContext, line_no: int, line: str):
     """Mark a single line"""
 
     line_type = 0
+
+    if ctx.in_indent_code_block and not line.startswith("    "):
+        ctx.in_indent_code_block = False
+        ctx.in_code_block = False
     # Metadata lines of MkDocs
     if line_no == 1 and re.search(r"^---\s*$", line):
         ctx.in_meta = True
@@ -107,30 +128,19 @@ def _mark_markdown_line(ctx: MdMarkContext, line_no: int, line: str):
     # blocks
     # header
     elif re.search(r"^#+ ", line):
-        line_type |= MdLineType.HEADING.value
-
-        ctx.in_quote = False
-        ctx.in_list = False
-        ctx.in_code_block = False
-        ctx.in_table = False
+        if not ctx.in_code_block:
+            line_type |= MdLineType.HEADING.value
+            ctx.set()
     # blockquotes
     elif re.search(r"^> ", line):
         if not ctx.in_code_block:
             line_type |= MdLineType.QUOTE.value
-            ctx.in_quote = True
-
-            ctx.in_list = False
-            ctx.in_code_block = False
-            ctx.in_table = False
+            ctx.set(in_quote=True)
     # bulleted list
     elif m := re.match(r"^(\s*)[*\-+] (\[[ xX]\] )?", line):
         if m.group(1) == "":
             line_type |= MdLineType.LIST.value
-            ctx.in_list = True
-
-            ctx.in_quote = False
-            ctx.in_code_block = False
-            ctx.in_table = False
+            ctx.set(in_list=True)
         elif ctx.in_list:
             line_type |= MdLineType.LIST.value
         elif ctx.in_quote:
@@ -141,66 +151,53 @@ def _mark_markdown_line(ctx: MdMarkContext, line_no: int, line: str):
         if not ctx.in_code_block:
             if m.group(1) == "":
                 line_type |= MdLineType.LIST.value
-                ctx.in_list = True
+                ctx.set(in_list=True)
             elif ctx.in_list:
                 line_type |= MdLineType.LIST.value
+                ctx.set(in_list=True)
 
-            ctx.in_quote = False
-            ctx.in_code_block = False
-            ctx.in_table = False
     # numbered list
     elif m := re.match(r"^(\s*)\d+[.)] ", line):
         if not ctx.in_code_block:
             if m.group(1) == "":
                 line_type |= MdLineType.LIST.value
-                ctx.in_list = True
+                ctx.set(in_list=True)
             elif ctx.in_list:
                 line_type |= MdLineType.LIST.value
+                ctx.set(in_list=True)
 
-            ctx.in_quote = False
-            ctx.in_code_block = False
-            ctx.in_table = False
-    # code block
+    # fenced code block
     elif re.search(r"^\s*```", line):
         line_type |= MdLineType.CODE_BLOCK.value
         ctx.in_code_block = not ctx.in_code_block
 
         if ctx.in_code_block:
-            ctx.in_quote = False
-            ctx.in_list = False
-            ctx.in_table = False
-    # code block
+            ctx.set(in_code_block=ctx.in_code_block)
+    # indent code block
     elif re.search(r"^    .*", line):
         is_empty_prev_line = (
             ctx.lines and ctx.lines[-1].line_type & MdLineType.EMPTY.value
         )
         if is_empty_prev_line:
             line_type |= MdLineType.CODE_BLOCK.value
-            ctx.in_code_block + True
-
-            ctx.in_quote = False
-            ctx.in_list = False
-            ctx.in_table = False
+            ctx.set(in_code_block=True, in_indent_code_block=True)
         elif ctx.in_list:
             line_type |= MdLineType.LIST.value
         elif ctx.in_quote:
             line_type |= MdLineType.QUOTE.value
         else:
             line_type |= MdLineType.CODE_BLOCK.value
+            ctx.set(in_code_block=True, in_indent_code_block=True)
     # horizontal rule
     elif re.search(r"^([\*\-_]\s*){3,}$", line):
         if not ctx.in_code_block:
             line_type |= MdLineType.H_RULE.value
-
-            ctx.in_quote = False
-            ctx.in_list = False
-            ctx.in_code_block = False
-            ctx.in_table = False
+            ctx.set()
     # table
     elif re.search(r"^(\|[ \t\-:|]*|[-:][-:| ]*)$", line):
         if not ctx.in_code_block:
             line_type |= MdLineType.TABLE.value
-            ctx.in_table = True
+            ctx.set(in_table=True)
 
             if ctx.lines:
                 prev_line = ctx.lines[-1]
@@ -228,10 +225,7 @@ def _mark_markdown_line(ctx: MdMarkContext, line_no: int, line: str):
             line_type |= MdLineType.QUOTE.value
         else:
             if is_empty_prev_line:
-                ctx.in_quote = False
-                ctx.in_list = False
-                ctx.in_code_block = False
-                ctx.in_table = False
+                ctx.set()
             line_type |= MdLineType.PARAGRAPH.value
     elif re.search(r"^\s+[^\s]", line):
         if ctx.in_code_block:
