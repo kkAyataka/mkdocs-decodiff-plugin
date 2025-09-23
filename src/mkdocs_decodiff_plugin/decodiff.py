@@ -20,7 +20,7 @@ class FileChange:
     file_path: str
     is_removed: bool = False
     is_added: bool = False
-    line_changes: List[LineChange] = field(default_factory=List)
+    line_changes: List[LineChange] = field(default_factory=list)
 
 
 def _embed_decodiff_tag_line(
