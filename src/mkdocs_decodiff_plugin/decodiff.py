@@ -92,7 +92,7 @@ def make_file_changes(
 
         # added file
         if file_diff.from_file is None:
-            file_changes.append(FileChange(file_path, True))
+            file_changes.append(FileChange(file_path, is_added=True))
             continue
 
         # changed file
