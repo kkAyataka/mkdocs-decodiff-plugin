@@ -14,16 +14,18 @@ python3 -m pip install -U pip
 
 # install
 pip install mkdocs
-#pip install -i https://test.pypi.org/simple/ mkdocs-decodiff-plugin
-pip install mkdocs-decodiff-plugin
+pip install -i https://test.pypi.org/simple/ mkdocs-decodiff-plugin
+#pip install mkdocs-decodiff-plugin
 
 # make
 mkdocs new .
+echo "# Changes" > docs/changes.md
 echo "
 plugins:
   - decodiff:
       base: main
-      dir: docs" >> mkdocs.yml
+      dir: docs
+      change_list_file: docs/changes.md" >> mkdocs.yml
 
 # git commit
 git init .
