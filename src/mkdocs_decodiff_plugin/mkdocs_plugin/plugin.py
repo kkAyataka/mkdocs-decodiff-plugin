@@ -17,7 +17,7 @@ import re
 import subprocess
 import sys
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Optional
 
 try:
     import mkdocs
@@ -76,7 +76,7 @@ def _make_change_list_md(
     return md
 
 
-def _get_git_root_dir():
+def _get_git_root_dir() -> Optional[str]:
     try:
         root = subprocess.check_output(
             ["git", "rev-parse", "--show-toplevel"], text=True
@@ -103,6 +103,9 @@ class DecodiffPlugin(mkdocs.plugins.BasePlugin[DecodiffPluginConfig]):
     def on_pre_build(self, config):
         # git root
         self._git_root_dir = _get_git_root_dir()
+        if self._git_root_dir is None:
+            # Here is not a git folder
+            return
 
         # get diff
         file_diffs: List[FileDiff] = []
