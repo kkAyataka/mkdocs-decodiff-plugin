@@ -6,7 +6,7 @@ This is an MkDocs plugin for decorating Git diff lines.
 
 This program inserts HTML tags into Markdown files to decorate diff lines using `git diff` output.
 
-![decoration-image](./_res/decoration-image.png)
+![decoration-image](https://raw.githubusercontent.com/kkAyataka/mkdocs-decodiff-plugin/refs/heads/main/docs/_res/decoration-image.png)
 
 ## How to Use
 
