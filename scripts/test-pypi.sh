@@ -14,8 +14,12 @@ python3 -m pip install -U pip
 
 # install
 pip install mkdocs
-pip install -i https://test.pypi.org/simple/ mkdocs-decodiff-plugin
-#pip install mkdocs-decodiff-plugin
+
+if [ ${PYPI_PRODUCTION} == 1 ]; then
+  pip install mkdocs-decodiff-plugin
+else
+  pip install -i https://test.pypi.org/simple/ mkdocs-decodiff-plugin
+fi
 
 # make
 mkdocs new .
