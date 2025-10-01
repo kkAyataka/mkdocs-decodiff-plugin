@@ -28,22 +28,22 @@ plugins:
 
 * **base**:
 
- Reference for `git diff`. You can specify a hash, tag name, or branch name.
+  Reference for `git diff`. You can specify a hash, tag name, or branch name.
 
- ```
- git diff {base}
- ```
+  ```
+  git diff {base}
+  ```
 * **dir**:
 
- Target directory.
+  Target directory.
 
- ```
- git diff -- {dir}
- ```
+  ```
+  git diff -- {dir}
+  ```
 
 * **change_list_file**:
   
- [Changes list file](#change_list_file)
+  [Changes list file](#change_list_file)
 
 
 ## change_list_file
