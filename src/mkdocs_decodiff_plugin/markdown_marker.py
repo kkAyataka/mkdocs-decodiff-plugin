@@ -16,7 +16,7 @@ class MdLineType(Enum):
     TABLE = 1 << 6
     PARAGRAPH = 1 << 7
     HTML = 1 << 8
-    # HTML_COMMENT = 1 << 9
+    HTML_COMMENT = 1 << 9
 
     META = 1 << 15
 
@@ -58,6 +58,9 @@ class MdLine:
     def is_html(self) -> bool:
         return self.line_type & MdLineType.HTML.value
 
+    def is_html_comment(self) -> bool:
+        return self.line_type & MdLineType.HTML_COMMENT.value
+
     def _line_type_str(self) -> str:
         types = []
         if self.line_type & MdLineType.EMPTY.value:
@@ -80,6 +83,8 @@ class MdLine:
             types.append("M")
         if self.line_type & MdLineType.HTML.value:
             types.append("X")
+        if self.line_type & MdLineType.HTML_COMMENT.value:
+            types.append("!")
 
         return ",".join(types)
 
@@ -98,6 +103,7 @@ class MdMarkContext:
     in_indent_code_block = False
     in_table = False
     in_html = False
+    in_html_comment = False
     in_meta = False
 
     html_start_tag = None
@@ -111,6 +117,7 @@ class MdMarkContext:
         in_indent_code_block=False,
         in_table=False,
         in_html=False,
+        in_html_comment=False,
         in_meta=False,
     ):
         self.in_quote = in_quote
@@ -119,6 +126,7 @@ class MdMarkContext:
         self.in_indent_code_block = in_indent_code_block
         self.in_table = in_table
         self.in_html = in_html
+        self.in_html_comment = in_html_comment
         self.in_meta = in_meta
 
 
@@ -130,6 +138,7 @@ def _mark_markdown_line(ctx: MdMarkContext, line_no: int, line: str):
     if ctx.in_indent_code_block and not line.startswith("    "):
         ctx.in_indent_code_block = False
         ctx.in_code_block = False
+
     # Metadata lines of MkDocs
     if line_no == 1 and re.search(r"^---\s*$", line):
         ctx.in_meta = True
@@ -139,6 +148,18 @@ def _mark_markdown_line(ctx: MdMarkContext, line_no: int, line: str):
         if re.search(r"^(---|...)\s*$", line):
             ctx.in_meta = False
     # blocks
+    # HTML comment
+    elif ctx.in_html_comment:
+        line_type |= MdLineType.HTML_COMMENT.value
+        if "-->" in line:
+            ctx.set()
+    elif re.search(r"^\s*<!--", line):
+        if ctx.in_code_block:
+            line_type |= MdLineType.CODE_BLOCK.value
+        else:
+            line_type |= MdLineType.HTML_COMMENT.value
+            if "-->" not in line:
+                ctx.set(in_html_comment=True)
     # header
     elif re.search(r"^#+ ", line):
         if not ctx.in_code_block:
