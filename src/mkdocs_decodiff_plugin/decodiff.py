@@ -33,6 +33,7 @@ def _embed_decodiff_tag_line(
         or marked_line.is_h_rule()
         or marked_line.is_table()
         or marked_line.is_html()
+        or marked_line.is_html_comment()
     ):
         return None
 
