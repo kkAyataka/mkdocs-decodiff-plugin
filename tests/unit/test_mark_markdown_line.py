@@ -263,6 +263,31 @@ def test_mark_html():
     assert ctx.lines[20]._line_type_str() == "X"
     assert ctx.lines[21]._line_type_str() == "X"
 
+def test_mark_html_comment():
+    """HTML comment block"""
+
+    md = dedent("""
+        <!--
+        comment 1
+        <div>
+        comment 3
+            comment 4
+        </div>
+        -->
+        """).strip()
+
+    ctx = MdMarkContext()
+    for no, line in enumerate(md.splitlines(), start=1):
+        _mark_markdown_line(ctx, no, line)
+
+    assert ctx.lines[0]._line_type_str() == "!"
+    assert ctx.lines[1]._line_type_str() == "!"
+    assert ctx.lines[2]._line_type_str() == "!"
+    assert ctx.lines[3]._line_type_str() == "!"
+    assert ctx.lines[4]._line_type_str() == "!"
+    assert ctx.lines[5]._line_type_str() == "!"
+    assert ctx.lines[6]._line_type_str() == "!"
+
 
 def test_mark_paragraph():
     """Paragraph"""
