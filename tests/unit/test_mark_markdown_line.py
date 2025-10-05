@@ -204,6 +204,66 @@ def test_mark_quote_after_block():
     assert ctx.lines[23]._line_type_str() == "Q"
 
 
+def test_mark_html():
+    """HTML block"""
+
+    md = dedent("""
+        <div>
+         text 1
+        </div>
+        paragraph 3
+        <div  ><div>text 4
+        </div>
+          <hr>
+          <br>
+        text 8
+        </div>
+        <div>
+          text 11
+          <div>
+            text 13
+            <div>
+              text 14
+              <div>
+                text 15
+              </div>
+              text 17
+            </div>
+            text 19
+          </div>
+          text 21
+        </div>
+        """).strip()
+
+    ctx = MdMarkContext()
+    for no, line in enumerate(md.splitlines(), start=1):
+        _mark_markdown_line(ctx, no, line)
+
+    assert ctx.lines[0]._line_type_str() == "X"
+    assert ctx.lines[1]._line_type_str() == "X"
+    assert ctx.lines[2]._line_type_str() == "X"
+    assert ctx.lines[3]._line_type_str() == "P"
+    assert ctx.lines[4]._line_type_str() == "X"
+    assert ctx.lines[5]._line_type_str() == "X"
+    assert ctx.lines[6]._line_type_str() == "X"
+    assert ctx.lines[7]._line_type_str() == "X"
+    assert ctx.lines[8]._line_type_str() == "X"
+    assert ctx.lines[9]._line_type_str() == "X"
+    assert ctx.lines[10]._line_type_str() == "X"
+    assert ctx.lines[11]._line_type_str() == "X"
+    assert ctx.lines[12]._line_type_str() == "X"
+    assert ctx.lines[13]._line_type_str() == "X"
+    assert ctx.lines[14]._line_type_str() == "X"
+    assert ctx.lines[15]._line_type_str() == "X"
+    assert ctx.lines[16]._line_type_str() == "X"
+    assert ctx.lines[17]._line_type_str() == "X"
+    assert ctx.lines[18]._line_type_str() == "X"
+    assert ctx.lines[19]._line_type_str() == "X"
+    assert ctx.lines[19]._line_type_str() == "X"
+    assert ctx.lines[20]._line_type_str() == "X"
+    assert ctx.lines[21]._line_type_str() == "X"
+
+
 def test_mark_paragraph():
     """Paragraph"""
 

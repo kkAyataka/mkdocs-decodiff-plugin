@@ -7,16 +7,18 @@ from typing import List
 class MdLineType(Enum):
     """Markdown line type"""
 
-    EMPTY = 1
-    HEADING = 2
-    QUOTE = 4
-    LIST = 8
-    CODE_BLOCK = 16
-    H_RULE = 32
-    TABLE = 64
-    PARAGRAPH = 128
+    EMPTY = 1 << 0
+    HEADING = 1 << 1
+    QUOTE = 1 << 2
+    LIST = 1 << 3
+    CODE_BLOCK = 1 << 4
+    H_RULE = 1 << 5
+    TABLE = 1 << 6
+    PARAGRAPH = 1 << 7
+    HTML = 1 << 8
+    # HTML_COMMENT = 1 << 9
 
-    META = 1024
+    META = 1 << 15
 
 
 @dataclass(frozen=True)
@@ -53,6 +55,9 @@ class MdLine:
     def is_meta(self) -> bool:
         return self.line_type & MdLineType.META.value
 
+    def is_html(self) -> bool:
+        return self.line_type & MdLineType.HTML.value
+
     def _line_type_str(self) -> str:
         types = []
         if self.line_type & MdLineType.EMPTY.value:
@@ -73,6 +78,8 @@ class MdLine:
             types.append("P")
         if self.line_type & MdLineType.META.value:
             types.append("M")
+        if self.line_type & MdLineType.HTML.value:
+            types.append("X")
 
         return ",".join(types)
 
@@ -90,7 +97,11 @@ class MdMarkContext:
     in_code_block = False
     in_indent_code_block = False
     in_table = False
+    in_html = False
     in_meta = False
+
+    html_start_tag = None
+    html_tag_count = 0
 
     def set(
         self,
@@ -99,6 +110,7 @@ class MdMarkContext:
         in_code_block=False,
         in_indent_code_block=False,
         in_table=False,
+        in_html=False,
         in_meta=False,
     ):
         self.in_quote = in_quote
@@ -106,6 +118,7 @@ class MdMarkContext:
         self.in_code_block = in_code_block
         self.in_indent_code_block = in_indent_code_block
         self.in_table = in_table
+        self.in_html = in_html
         self.in_meta = in_meta
 
 
@@ -185,6 +198,8 @@ def _mark_markdown_line(ctx: MdMarkContext, line_no: int, line: str):
             line_type |= MdLineType.LIST.value
         elif ctx.in_quote:
             line_type |= MdLineType.QUOTE.value
+        elif ctx.in_html:
+            line_type |= MdLineType.HTML.value
         else:
             line_type |= MdLineType.CODE_BLOCK.value
             ctx.set(in_code_block=True, in_indent_code_block=True)
@@ -209,6 +224,33 @@ def _mark_markdown_line(ctx: MdMarkContext, line_no: int, line: str):
     elif re.search(r"^(\|)?.*\|.*", line):
         if not ctx.in_code_block and ctx.in_table:
             line_type |= MdLineType.TABLE.value
+    # HTML
+    elif m := re.match(r"^(\s*)<[^<]*?>", line):
+        if ctx.in_code_block:
+            line_type |= MdLineType.CODE_BLOCK.value
+        else:
+            line_type |= MdLineType.HTML.value
+            tags = re.findall(r"<(.*?)[ >]", line)
+
+            if not ctx.in_html:
+                ctx.set(in_html=True)
+
+            for tag in tags:
+                # start tag
+                if ctx.html_start_tag is None:
+                    ctx.html_start_tag = tag
+                    ctx.html_tag_count = 1
+                # count same tag as start tag
+                elif tag == ctx.html_start_tag:
+                    ctx.html_tag_count += 1
+                # checks close tag
+                elif tag == "/" + ctx.html_start_tag:
+                    ctx.html_tag_count -= 1
+                    # chechs whether first tag is closed
+                    if ctx.html_tag_count <= 0:
+                        ctx.html_start_tag = None
+                        ctx.html_tag_count = 0
+                        ctx.set(in_html=False)
     # empty
     elif re.search(r"^\s*$", line):
         line_type |= MdLineType.EMPTY.value
@@ -223,10 +265,13 @@ def _mark_markdown_line(ctx: MdMarkContext, line_no: int, line: str):
             line_type |= MdLineType.LIST.value
         elif ctx.in_quote and not is_empty_prev_line:
             line_type |= MdLineType.QUOTE.value
+        elif ctx.in_html:
+            line_type |= MdLineType.HTML.value
         else:
             if is_empty_prev_line:
                 ctx.set()
             line_type |= MdLineType.PARAGRAPH.value
+    # indented text
     elif re.search(r"^\s+[^\s]", line):
         if ctx.in_code_block:
             line_type |= MdLineType.CODE_BLOCK.value
@@ -234,6 +279,8 @@ def _mark_markdown_line(ctx: MdMarkContext, line_no: int, line: str):
             line_type |= MdLineType.LIST.value
         elif ctx.in_quote:
             line_type |= MdLineType.QUOTE.value
+        elif ctx.in_html:
+            line_type |= MdLineType.HTML.value
 
     ctx.lines.append(MdLine(line, line_type))
 
