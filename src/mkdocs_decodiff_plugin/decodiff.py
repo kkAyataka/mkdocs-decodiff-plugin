@@ -32,6 +32,7 @@ def _embed_decodiff_tag_line(
         or marked_line.is_code_block()
         or marked_line.is_h_rule()
         or marked_line.is_table()
+        or marked_line.is_html()
     ):
         return None
 
