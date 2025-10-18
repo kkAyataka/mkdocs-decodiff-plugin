@@ -169,10 +169,7 @@ class DecodiffPlugin(BasePlugin[DecodiffPluginConfig]):
         md = markdown
 
         # change list file
-        if (
-            self._change_list_file_path is not None
-            and file_path == self._change_list_file_path
-        ):
+        if self._change_list_md and file_path == self._change_list_file_path:
             # search decodiff comment
             p = re.compile(
                 rf"{_DECODIFF_CHANGE_LIST_START}.*?{_DECODIFF_CHANGE_LIST_END}",
