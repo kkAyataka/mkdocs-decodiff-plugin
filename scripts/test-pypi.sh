@@ -3,9 +3,9 @@
 cd "$(dirname "${0}")"
 
 # make workspace
-rm -rf test-pypi
-mkdir test-pypi
-cd test-pypi
+rm -rf .test-pypi
+mkdir .test-pypi
+cd .test-pypi
 
 # initialize Python
 python3 -m venv .venv
