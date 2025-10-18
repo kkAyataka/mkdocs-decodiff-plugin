@@ -183,7 +183,7 @@ class DecodiffPlugin(BasePlugin[DecodiffPluginConfig]):
                 # if the decodiff comment is not found, add to the tail
                 md += "\n" + change_list_md
 
-        # chagned file
+        # changed file
         for file_change in self._file_changes:
             # checks whether the markdown file has changes
             if file_path == file_change.file_path:
@@ -205,7 +205,7 @@ class DecodiffPlugin(BasePlugin[DecodiffPluginConfig]):
                         # It is metadata or empty lines at head
                         offset += 1
 
-                # replave changed lines
+                # replace changed lines
                 md_lines = markdown.splitlines()
                 for line_change in file_change.line_changes:
                     md_lines[line_change.line_no - offset - 1] = line_change.tagged_line
