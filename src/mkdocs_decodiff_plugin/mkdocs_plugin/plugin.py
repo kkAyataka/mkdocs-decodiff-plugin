@@ -182,33 +182,33 @@ class DecodiffPlugin(BasePlugin[DecodiffPluginConfig]):
             if num <= 0:
                 # if the decodiff comment is not found, add to the tail
                 md += "\n" + change_list_md
+        else:
+            # changed file
+            for file_change in self._file_changes:
+                # checks whether the markdown file has changes
+                if file_path == file_change.file_path:
+                    # Leading empty lines and metadata lines have been removed.
+                    # Count how many lines were removed before the current first line appears
+                    first_line = markdown.partition("\n")[0]
+                    raw_md = page.file.content_string
+                    offset = 0
+                    while True:
+                        # read 1 line
+                        line, _, raw_md = raw_md.partition("\n")
+                        if line == first_line:
+                            break
+                        elif raw_md == "":
+                            # file is end
+                            break
+                        else:
+                            # It is removed line from raw content
+                            # It is metadata or empty lines at head
+                            offset += 1
 
-        # changed file
-        for file_change in self._file_changes:
-            # checks whether the markdown file has changes
-            if file_path == file_change.file_path:
-                # Leading empty lines and metadata lines have been removed.
-                # Count how many lines were removed before the current first line appears
-                first_line = markdown.partition("\n")[0]
-                raw_md = page.file.content_string
-                offset = 0
-                while True:
-                    # read 1 line
-                    line, _, raw_md = raw_md.partition("\n")
-                    if line == first_line:
-                        break
-                    elif raw_md == "":
-                        # file is end
-                        break
-                    else:
-                        # It is removed line from raw content
-                        # It is metadata or empty lines at head
-                        offset += 1
-
-                # replace changed lines
-                md_lines = markdown.splitlines()
-                for line_change in file_change.line_changes:
-                    md_lines[line_change.line_no - offset - 1] = line_change.tagged_line
-                md = "\n".join(md_lines)
+                    # replace changed lines
+                    md_lines = markdown.splitlines()
+                    for line_change in file_change.line_changes:
+                        md_lines[line_change.line_no - offset - 1] = line_change.tagged_line
+                    md = "\n".join(md_lines)
 
         return md
