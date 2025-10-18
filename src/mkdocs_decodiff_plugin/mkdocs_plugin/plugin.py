@@ -10,20 +10,19 @@ plugins:
       change_list_file: docs/changes.md
 """
 
-from __future__ import annotations
-
 import os
 import re
 import subprocess
 import sys
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List
 
-try:
-    import mkdocs
-    from mkdocs.structure.pages import Page
-except Exception:
-    BasePlugin = object
+from mkdocs.config.base import Config
+from mkdocs.config.config_options import Type
+from mkdocs.config.defaults import MkDocsConfig
+from mkdocs.plugins import BasePlugin
+from mkdocs.structure.files import File, Files
+from mkdocs.structure.pages import Page
 
 from .._git_diff.git_diff import FileDiff, WordDiff, run_git_diff
 from .._git_diff.parse_porcelain_diff import parse_porcelain_diff
@@ -76,7 +75,7 @@ def _make_change_list_md(
     return md
 
 
-def _get_git_root_dir() -> Optional[str]:
+def _get_git_root_dir() -> str | None:
     try:
         root = subprocess.check_output(
             ["git", "rev-parse", "--show-toplevel"], text=True
@@ -86,21 +85,26 @@ def _get_git_root_dir() -> Optional[str]:
         return None
 
 
-class DecodiffPluginConfig(mkdocs.config.base.Config):
-    base = mkdocs.config.config_options.Type(str, default="main")
-    dir = mkdocs.config.config_options.Type(str, default="docs")
-    change_list_file = mkdocs.config.config_options.Type(str, default="docs/changes.md")
-    word_diff = mkdocs.config.config_options.Type(bool, default=False)
+class DecodiffPluginConfig(Config):
+    base = Type(str, default="main")
+    dir = Type(str, default="docs")
+    change_list_file = Type(str, default="docs/changes.md")
+    word_diff = Type(bool, default=False)
 
 
-class DecodiffPlugin(mkdocs.plugins.BasePlugin[DecodiffPluginConfig]):
+class DecodiffPlugin(BasePlugin[DecodiffPluginConfig]):
     _git_root_dir: str = None
     _file_changes: List[FileChange] = []
     _file_diffs: List[FileDiff] = []
     _change_list_file_path: str = None
     _change_list_md: str = None
 
-    def on_pre_build(self, config):
+    def on_config(self, config: MkDocsConfig) -> MkDocsConfig | None:
+        config.extra_css.insert(0, "assets/decodiff/decodiff.css")
+
+        return config
+
+    def on_pre_build(self, config: MkDocsConfig):
         # git root
         self._git_root_dir = _get_git_root_dir()
         if self._git_root_dir is None:
@@ -144,15 +148,10 @@ class DecodiffPlugin(mkdocs.plugins.BasePlugin[DecodiffPluginConfig]):
                     self._change_list_file_path, self._file_changes
                 )
 
-    def on_config(self, config):
-        config.extra_css.insert(0, "assets/decodiff/decodiff.css")
-
-        return config
-
-    def on_files(self, files, config):
+    def on_files(self, files: Files, config: MkDocsConfig) -> Files | None:
         # register assets
         files.append(
-            mkdocs.structure.files.File(
+            File(
                 path="decodiff.css",
                 src_dir=os.path.join(os.path.dirname(__file__), "assets"),
                 dest_dir=f"{config.site_dir}/assets/decodiff",
@@ -162,7 +161,9 @@ class DecodiffPlugin(mkdocs.plugins.BasePlugin[DecodiffPluginConfig]):
 
         return files
 
-    def on_page_markdown(self, markdown: str, page: Page, config, files):
+    def on_page_markdown(
+        self, markdown: str, page: Page, config: MkDocsConfig, files: Files
+    ) -> str | None:
         file_path = os.path.join(page.file.src_dir, page.file.src_path)
 
         md = markdown
