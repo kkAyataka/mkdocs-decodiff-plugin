@@ -132,7 +132,7 @@ def parse_unified_diff(diff_text: str) -> List[FileDiff]:
     if (
         not is_not_markdown
         and (from_file is not None or to_file is not None)
-        and len(diff_lines) > 0
+        and (len(diff_lines) > 0 or is_removed_or_added_file)
     ):
         diffs.append(FileDiff(from_file, to_file, diff_lines))
 

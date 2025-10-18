@@ -26,6 +26,8 @@ def test_parse_unified_diff_1():
         """).strip()
     diffs = parse_unified_diff(diff_text)
 
+    assert len(diffs) == 1
+
     assert diffs[0].from_file == "tests/_res/file1.md"
     assert diffs[0].to_file == "tests/_res/file1.md"
     assert diffs[0].line_diffs[0].anchor_no == 0
@@ -98,6 +100,8 @@ def test_parse_unified_diff_2():
         """).strip()
     diffs = parse_unified_diff(diff_text)
 
+    assert len(diffs) == 3
+
     assert diffs[0].from_file == "tests/_res/file1.md"
     assert diffs[0].to_file == "tests/_res/file1.md"
     assert diffs[0].line_diffs[0].anchor_no == 0
@@ -114,4 +118,47 @@ def test_parse_unified_diff_2():
     assert diffs[2].to_file is None
     assert len(diffs[2].line_diffs) == 0
 
-    assert len(diffs) == 3
+
+def test_parse_unified_diff_3():
+    diff_text = dedent("""
+        diff --git a/tests/_res/file1.md b/tests/_res/file1.md
+        index 79271ac..4b916cd 100644
+        --- a/tests/_res/file1.md
+        +++ b/tests/_res/file1.md
+        @@ -34 +33,0 @@ git status
+        -git add
+        @@ -35,0 +35 @@ git commit
+        +git log
+        diff --git a/tests/_res/subdir/file2.md b/tests/_res/subdir/file2.md
+        new file mode 100644
+        index 0000000..cf6ad9e
+        --- /dev/null
+        +++ b/tests/_res/subdir/file2.md
+        @@ -0,0 +1,11 @@
+        +# file 2
+        +
+        +## 1
+        +
+        +ジョバンニはまっ赤かになってうなずきました。けれどもいつかジョバンニの眼めのなかには涙なみだがいっぱいになりました。そうだ僕ぼくは知っていたのだ、もちろんカムパネルラも知っている、それはいつかカムパネルラのお父さんの博士はかせのうちでカムパネルラといっしょに読んだ雑誌ざっしのなかにあったのだ。
+        +
+        +それどこでなくカムパネルラは、その雑誌ざっしを読むと、すぐお父さんの書斎しょさいから巨おおきな本をもってきて、ぎんがというところをひろげ、まっ黒な頁ページいっぱいに白に点々てんてんのある美うつくしい写真しゃしんを二人でいつまでも見たのでした。
+        +
+        +## 2
+        +
+        +ジョバンニが学校の門を出るとき、同じ組の七、八人は家へ帰らずカムパネルラをまん中にして校庭こうていの隅すみの桜さくらの木のところに集あつまっていました。それはこんやの星祭ほしまつりに青いあかりをこしらえて川へ流ながす烏瓜からすうりを取とりに行く相談そうだんらしかったのです。
+        """).strip()
+    diffs = parse_unified_diff(diff_text)
+
+    assert len(diffs) == 2
+
+    assert diffs[0].from_file == "tests/_res/file1.md"
+    assert diffs[0].to_file == "tests/_res/file1.md"
+    assert diffs[0].line_diffs[0].anchor_no == 0
+    assert diffs[0].line_diffs[0].line_no == 35
+    assert diffs[0].line_diffs[0].col_start == 0
+    assert diffs[0].line_diffs[0].col_end == 7
+    assert len(diffs[0].line_diffs) == 1
+
+    assert diffs[1].from_file is None
+    assert diffs[1].to_file == "tests/_res/subdir/file2.md"
+    assert len(diffs[1].line_diffs) == 0
