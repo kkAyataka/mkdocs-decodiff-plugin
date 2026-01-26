@@ -164,12 +164,12 @@ class DecodiffPlugin(BasePlugin[DecodiffPluginConfig]):
     def on_page_markdown(
         self, markdown: str, page: Page, config: MkDocsConfig, files: Files
     ) -> str | None:
-        file_path = os.path.join(page.file.src_dir, page.file.src_path)
+        file_path = os.path.normpath(os.path.join(page.file.src_dir, page.file.src_path))
 
         md = markdown
 
         # change list file
-        if self._change_list_md and file_path == self._change_list_file_path:
+        if self._change_list_md and file_path == os.path.normpath(self._change_list_file_path):
             # search decodiff comment
             p = re.compile(
                 rf"{_DECODIFF_CHANGE_LIST_START}.*?{_DECODIFF_CHANGE_LIST_END}",
@@ -186,7 +186,7 @@ class DecodiffPlugin(BasePlugin[DecodiffPluginConfig]):
             # changed file
             for file_change in self._file_changes:
                 # checks whether the markdown file has changes
-                if file_path == file_change.file_path:
+                if file_path == os.path.normpath(file_change.file_path):
                     # Leading empty lines and metadata lines have been removed.
                     # Count how many lines were removed before the current first line appears
                     first_line = markdown.partition("\n")[0]
