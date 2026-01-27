@@ -1,6 +1,6 @@
 [project]
 name = "mkdocs-decodiff-plugin"
-version = "0.0.7"
+version = "0.0.8"
 authors = [
   { name="kkAyataka", email="kk.ayataka@gmail.com" },
 ]
